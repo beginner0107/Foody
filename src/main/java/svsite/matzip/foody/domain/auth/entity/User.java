@@ -8,13 +8,16 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.util.List;
 import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import svsite.matzip.foody.domain.favorite.entity.Favorite;
 import svsite.matzip.foody.global.entity.BaseEntity;
 
 @Entity
@@ -66,6 +69,9 @@ public class User extends BaseEntity {
 
   @Column(length = 255)
   private String hashedRefreshToken;
+
+  @OneToMany(mappedBy = "user", orphanRemoval = true)
+  private List<Favorite> favorites;
 
   @Override
   public boolean equals(Object o) {
