@@ -2,6 +2,7 @@ package svsite.matzip.foody.domain.post.entity;
 
 import static jakarta.persistence.FetchType.LAZY;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -12,9 +13,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -22,6 +26,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import svsite.matzip.foody.domain.auth.entity.User;
+import svsite.matzip.foody.domain.favorite.entity.Favorite;
+import svsite.matzip.foody.domain.image.api.Image;
 import svsite.matzip.foody.global.entity.BaseEntity;
 
 @Entity
@@ -59,6 +65,13 @@ public class Post extends BaseEntity {
   @ManyToOne(fetch = LAZY)
   @JoinColumn(name = "user_id")
   private User user;
+
+  @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+  @Builder.Default
+  private List<Image> images = new ArrayList<>();
+
+  @OneToMany(mappedBy = "post", orphanRemoval = true)
+  private List<Favorite> favorites;
 
   @Override
   public boolean equals(Object o) {
