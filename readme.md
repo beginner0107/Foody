@@ -54,6 +54,8 @@ erDiagram
         STRING green
         STRING blue
         STRING purple
+        DATETIME createdAt
+        DATETIME updatedAt
         DATETIME deletedAt
         STRING hashedRefreshToken
     }
@@ -68,17 +70,23 @@ erDiagram
         STRING description
         DATETIME date
         INTEGER score
+        DATETIME createdAt
+        DATETIME updatedAt
         DATETIME deletedAt
     }
 
     Favorite {
         LONG id
+        DATETIME createdAt
+        DATETIME updatedAt
         DATETIME deletedAt
     }
 
     Image {
         LONG id
         STRING uri
+        DATETIME createdAt
+        DATETIME updatedAt
         DATETIME deletedAt
     }
 ```
