@@ -1,6 +1,5 @@
 package svsite.matzip.foody.domain.image.api;
 
-import static jakarta.persistence.CascadeType.REMOVE;
 import static jakarta.persistence.FetchType.LAZY;
 
 import jakarta.persistence.Entity;
@@ -31,7 +30,7 @@ public class Image extends BaseEntity {
 
   private String uri;
 
-  @ManyToOne(fetch = LAZY, cascade = REMOVE)
+  @ManyToOne(fetch = LAZY)
   @JoinColumn(name="post_id")
   Post post;
 
