@@ -167,3 +167,20 @@ sequenceDiagram
 
 ## 7. 트러블 슈팅
 
+<details>
+<summary style="cursor: pointer">스프링 프로젝트 시작 후 바로 종료(shutdown)</summary>
+<div markdown="1">
+
+- 문제 상황
+```gradle
+com.zaxxer.hikari.HikariDataSource : HikariPool-1 - Shutdown initiated.
+```
+
+- 해결
+- 처음 의존성 설정 시 아래와 같은 의존성이 빠져 있었음
+```gradle
+implementation 'org.springframework.boot:spring-boot-starter-web'
+```
+
+</div>
+</details>
