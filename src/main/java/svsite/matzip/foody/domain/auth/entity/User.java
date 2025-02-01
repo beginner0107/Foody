@@ -24,7 +24,7 @@ import svsite.matzip.foody.global.entity.BaseEntity;
 @Getter
 @Builder
 @AllArgsConstructor
-@NoArgsConstructor(access = AccessLevel.PROTECTED)  // 기본 생성자 보호
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User extends BaseEntity {
 
   @Id
