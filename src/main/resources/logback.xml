@@ -1,0 +1,38 @@
+<configuration>
+  <property name="LOG_FILE" value="application.log" />
+
+  <!-- 콘솔 출력 -->
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{yyyy-MM-dd HH:mm:ss} %-5level [%thread] %logger{36} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <!-- 파일 출력 -->
+  <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>${LOG_FILE}</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+      <fileNamePattern>application.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+      <maxFileSize>10MB</maxFileSize>
+      <maxHistory>30</maxHistory>
+    </rollingPolicy>
+    <encoder>
+      <pattern>%d{yyyy-MM-dd HH:mm:ss} %-5level [%thread] %logger{36} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <!-- 비동기 로깅 설정 -->
+  <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+    <appender-ref ref="FILE" />
+  </appender>
+
+  <!-- 로그 레벨 설정 -->
+  <root level="info">  <!-- 로그 레벨을 info로 설정 -->
+    <appender-ref ref="CONSOLE" />
+    <appender-ref ref="ASYNC_FILE" />
+  </root>
+
+  <!-- 특정 패키지별 로그 레벨 설정 -->
+  <logger name="org.springframework.boot.autoconfigure" level="warn" />
+  <logger name="org.springframework.context.annotation" level="warn" />
+</configuration>
