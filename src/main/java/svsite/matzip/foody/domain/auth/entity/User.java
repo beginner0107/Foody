@@ -1,5 +1,7 @@
 package svsite.matzip.foody.domain.auth.entity;
 
+import static svsite.matzip.foody.domain.auth.entity.LoginType.EMAIL;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -17,6 +19,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import svsite.matzip.foody.domain.auth.api.dto.request.AuthRequestDto;
 import svsite.matzip.foody.domain.favorite.entity.Favorite;
 import svsite.matzip.foody.global.entity.BaseEntity;
 
@@ -72,6 +75,14 @@ public class User extends BaseEntity {
 
   @OneToMany(mappedBy = "user", orphanRemoval = true)
   private List<Favorite> favorites;
+
+  public static User signup(AuthRequestDto authDto, String hashedPassword) {
+    return User.builder()
+        .email(authDto.email())
+        .password(hashedPassword)
+        .loginType(EMAIL)
+        .build();
+  }
 
   @Override
   public boolean equals(Object o) {
