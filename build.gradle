@@ -39,6 +39,9 @@ dependencies {
 
     // 암호화
     implementation 'org.springframework.security:spring-security-crypto:6.0.0'
+
+    // swagger
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
 }
 
 tasks.named('test') {
