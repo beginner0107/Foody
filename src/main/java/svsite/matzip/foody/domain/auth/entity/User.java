@@ -46,7 +46,7 @@ public class User extends BaseEntity {
   @Column(nullable = false, length = 200)
   private String password;
 
-  @Column(nullable = false, length = 50)
+  @Column(length = 50)
   private String nickname;
 
   @Column(length = 255)
@@ -55,19 +55,19 @@ public class User extends BaseEntity {
   @Column(length = 255)
   private String kakaoImageUri;
 
-  @Column(nullable = false, length = 50)
+  @Column(length = 50)
   private String RED;
 
-  @Column(nullable = false, length = 50)
+  @Column(length = 50)
   private String YELLOW;
 
-  @Column(nullable = false, length = 50)
+  @Column(length = 50)
   private String GREEN;
 
-  @Column(nullable = false, length = 50)
+  @Column(length = 50)
   private String BLUE;
 
-  @Column(nullable = false, length = 50)
+  @Column(length = 50)
   private String PURPLE;
 
   @Column(length = 255)
