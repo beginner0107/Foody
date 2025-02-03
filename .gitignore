@@ -357,3 +357,4 @@ gradle-app.setting
 /.idea/**
 # resources 디렉터리 내 특정 yml 파일 무시
 /src/main/resources/application-*.yml
+*.gz
