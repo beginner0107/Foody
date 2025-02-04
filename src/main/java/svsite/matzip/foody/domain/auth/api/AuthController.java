@@ -8,14 +8,19 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import svsite.matzip.foody.domain.auth.api.dto.request.AuthRequestDto;
 import svsite.matzip.foody.domain.auth.api.dto.response.TokenResponseDto;
+import svsite.matzip.foody.domain.auth.entity.User;
 import svsite.matzip.foody.domain.auth.service.AuthService;
+import svsite.matzip.foody.global.auth.AuthenticatedUser;
+import svsite.matzip.foody.global.util.jwt.JwtTokenType;
 
 @Tag(name = "Auth", description = "회원 인증 관련 API")
 @RestController
@@ -45,5 +50,12 @@ public class AuthController {
   @PostMapping("/signin")
   public ResponseEntity<TokenResponseDto> signin(@RequestBody @Valid AuthRequestDto authRequestDto) {
     return ResponseEntity.ok().body(authService.signin(authRequestDto));
+  }
+
+  @GetMapping("/refresh")
+  public ResponseEntity<TokenResponseDto> refresh(
+      @AuthenticatedUser(JwtTokenType.REFRESH) User user) {
+    TokenResponseDto tokens = authService.refreshToken(user);
+    return ResponseEntity.status(HttpStatus.CREATED).body(tokens);
   }
 }

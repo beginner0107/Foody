@@ -61,4 +61,10 @@ public class AuthService {
     String hashedRefreshToken = passwordEncoder.encode(refreshToken);
     user.updateHashedRefreshToken(hashedRefreshToken);
   }
+
+  public TokenResponseDto refreshToken(User user) {
+    TokenResponseDto tokenDto = getTokens(user.getEmail());
+    updateHashedRefreshToken(user, tokenDto.refreshToken());
+    return tokenDto;
+  }
 }
