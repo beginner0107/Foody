@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Size;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(description = "회원가입 요청 DTO")
+@Schema(description = "회원가입, 로그인 요청 DTO")
 public record AuthRequestDto(
     @Schema(
         description = "사용자 이메일",
