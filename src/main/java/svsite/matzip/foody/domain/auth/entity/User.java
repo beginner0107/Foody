@@ -94,4 +94,8 @@ public class User extends BaseEntity {
   public int hashCode() {
     return Objects.hash(getId());
   }
+
+  public void updateHashedRefreshToken(String hashedRefreshToken) {
+    this.hashedRefreshToken = hashedRefreshToken;
+  }
 }

@@ -1,5 +1,7 @@
 package svsite.matzip.foody.domain.auth.api;
 
+import static org.springframework.http.HttpStatus.CREATED;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import svsite.matzip.foody.domain.auth.api.dto.request.AuthRequestDto;
+import svsite.matzip.foody.domain.auth.api.dto.response.TokenResponseDto;
 import svsite.matzip.foody.domain.auth.service.AuthService;
 
 @Tag(name = "Auth", description = "회원 인증 관련 API")
@@ -31,5 +34,16 @@ public class AuthController {
   @PostMapping("/signup")
   public ResponseEntity<Long> signup(@RequestBody @Valid AuthRequestDto authRequestDto) {
     return ResponseEntity.ok(authService.signup(authRequestDto));
+  }
+
+  @Operation(summary = "로그인", description = "사용자가 로그인 합니다.")
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "회원가입 성공"),
+      @ApiResponse(responseCode = "404", description = "존재하지 않는 사용자"),
+      @ApiResponse(responseCode = "400", description = "잘못된 요청")
+  })
+  @PostMapping("/signin")
+  public ResponseEntity<TokenResponseDto> signin(@RequestBody @Valid AuthRequestDto authRequestDto) {
+    return ResponseEntity.ok().body(authService.signin(authRequestDto));
   }
 }
