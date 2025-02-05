@@ -7,6 +7,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 import svsite.matzip.foody.domain.auth.api.AuthController;
 import svsite.matzip.foody.domain.auth.service.AuthService;
+import svsite.matzip.foody.global.auth.AuthenticatedUserResolver;
 
 @WebMvcTest(controllers = {
     AuthController.class,
@@ -18,4 +19,6 @@ public abstract class ControllerTestSupport {
   protected ObjectMapper objectMapper;
   @MockBean
   protected AuthService authService;
+  @MockBean
+  protected AuthenticatedUserResolver authenticatedUserResolver;
 }

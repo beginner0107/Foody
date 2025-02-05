@@ -4,6 +4,8 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -11,10 +13,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import svsite.matzip.foody.domain.auth.ControllerTestSupport;
 import svsite.matzip.foody.domain.auth.api.dto.request.AuthRequestDto;
 import svsite.matzip.foody.domain.auth.api.dto.response.TokenResponseDto;
+import svsite.matzip.foody.domain.auth.entity.User;
 import svsite.matzip.foody.global.exception.errorCode.ErrorCodes;
 import svsite.matzip.foody.global.exception.support.CustomException;
 
@@ -110,5 +114,30 @@ class AuthControllerTest extends ControllerTestSupport {
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(requestDto)))
         .andExpect(status().isBadRequest()); // 400
+  }
+
+  @Test
+  @DisplayName("토큰 재발급 성공 시 201 Created와 토큰 정보를 반환한다.")
+  void refreshToken_success() throws Exception {
+    // given
+    User mockUser = User.builder()
+        .email("test@example.com")
+        .hashedRefreshToken("hashedRefreshToken")
+        .build();
+
+    TokenResponseDto tokenResponse = new TokenResponseDto("newAccessToken", "newRefreshToken");
+
+    // 인증된 사용자 주입 및 서비스 동작 모의(Mock)
+    when(authenticatedUserResolver.supportsParameter(any())).thenReturn(true);
+    when(authenticatedUserResolver.resolveArgument(any(), any(), any(), any())).thenReturn(mockUser);
+    when(authService.refreshToken(any(User.class))).thenReturn(tokenResponse);
+
+    // when & then
+    mockMvc.perform(get("/auth/refresh")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer validRefreshToken")
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.accessToken", is("newAccessToken")))
+        .andExpect(jsonPath("$.refreshToken", is("newRefreshToken")));
   }
 }
