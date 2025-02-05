@@ -82,13 +82,6 @@ public class JwtUtil {
     }
   }
 
-  private String parseBearerToken(String token) {
-    if (token == null || !token.startsWith(BEARER_TOKEN)) {
-      throw new InvalidJwtTokenException(JwtErrorMessages.TOKEN_HEADER_INVALID);
-    }
-    return token.replace(BEARER_TOKEN, "").trim();
-  }
-
   private Date calculateExpiration(long duration) {
     return new Date(System.currentTimeMillis() + duration);
   }
