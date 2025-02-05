@@ -52,6 +52,12 @@ public class AuthController {
     return ResponseEntity.ok().body(authService.signin(authRequestDto));
   }
 
+  @Operation(summary = "엑세스, 리프레쉬 토큰 재발급", description = "엑세스 토큰 만료시 리프레쉬 토큰으로 재발급합니다.")
+  @ApiResponses({
+      @ApiResponse(responseCode = "201", description = "엑세스, 리프레쉬 토큰 재발급 성공"),
+      @ApiResponse(responseCode = "404", description = "존재하지 않는 사용자"),
+      @ApiResponse(responseCode = "400", description = "잘못된 요청")
+  })
   @GetMapping("/refresh")
   public ResponseEntity<TokenResponseDto> refresh(
       @AuthenticatedUser(JwtTokenType.REFRESH) User user) {
