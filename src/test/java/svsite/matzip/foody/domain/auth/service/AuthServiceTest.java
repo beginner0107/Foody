@@ -11,10 +11,15 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 import svsite.matzip.foody.domain.auth.api.dto.request.AuthRequestDto;
@@ -26,12 +31,20 @@ import svsite.matzip.foody.global.exception.support.CustomException;
 import svsite.matzip.foody.global.util.jwt.JwtUtil;
 
 
+@ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
 
-  private final UserRepository userRepository = Mockito.mock(UserRepository.class);
-  private final PasswordEncoder passwordEncoder = Mockito.mock(PasswordEncoder.class);
-  private final JwtUtil jwtUtil = Mockito.mock(JwtUtil.class);
-  private final AuthService authService = new AuthService(userRepository, passwordEncoder, jwtUtil);
+  @InjectMocks
+  private AuthService authService;
+
+  @Mock
+  private UserRepository userRepository;
+
+  @Mock
+  private PasswordEncoder passwordEncoder;
+
+  @Mock
+  private JwtUtil jwtUtil;
 
   @DisplayName("정상 회원가입")
   @Test
@@ -133,5 +146,39 @@ class AuthServiceTest {
     verify(passwordEncoder, never()).matches(anyString(), anyString());
     verify(jwtUtil, never()).generateAccessToken(anyMap());
     verify(jwtUtil, never()).generateRefreshToken(anyMap());
+  }
+
+  @Test
+  @DisplayName("refreshToken이 유효하여 토큰이 재발급된다.")
+  void refreshToken_success() {
+    // given
+    User mockUser = User.builder()
+        .email("test@example.com")
+        .hashedRefreshToken("existingHashedToken")
+        .build();
+
+    Map<String, Object> payload = new HashMap<>();
+    payload.put("email", "test@example.com");
+
+    String newAccessToken = "newAccessToken";
+    String newRefreshToken = "newRefreshToken";
+
+    // Mock 설정
+    when(jwtUtil.generateAccessToken(payload)).thenReturn(newAccessToken);
+    when(jwtUtil.generateRefreshToken(payload)).thenReturn(newRefreshToken);
+    when(passwordEncoder.encode(newRefreshToken)).thenReturn("newEncodedRefreshToken");
+
+    // when
+    TokenResponseDto result = authService.refreshToken(mockUser);
+
+    // then
+    assertNotNull(result, "토큰 응답은 null이 아니어야 합니다.");
+    assertNotNull(result.accessToken(), "AccessToken은 null이 아니어야 합니다.");
+    assertNotNull(result.refreshToken(), "RefreshToken은 null이 아니어야 합니다.");
+
+    // verify
+    verify(jwtUtil).generateAccessToken(payload);
+    verify(jwtUtil).generateRefreshToken(payload);
+    verify(passwordEncoder).encode(newRefreshToken);
   }
 }
