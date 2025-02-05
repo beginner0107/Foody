@@ -4,6 +4,7 @@ import static svsite.matzip.foody.global.exception.errorCode.ErrorCodes.USER_NOT
 import static svsite.matzip.foody.global.util.jwt.JwtErrorMessages.REFRESH_TOKEN_INVALID;
 
 import io.jsonwebtoken.Claims;
+import jakarta.annotation.Nullable;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.MethodParameter;
@@ -36,14 +37,14 @@ public class AuthenticatedUserResolver implements HandlerMethodArgumentResolver 
 
   @Override
   public @NonNull Object resolveArgument(@NonNull MethodParameter parameter,
-      @NonNull ModelAndViewContainer mavContainer,
+      @Nullable ModelAndViewContainer mavContainer,
       @NonNull NativeWebRequest webRequest,
-      @NonNull WebDataBinderFactory binderFactory) {
+      @Nullable  WebDataBinderFactory binderFactory) {
 
     // Authorization 헤더에서 토큰 추출
     String token = webRequest.getHeader("Authorization");
     if (token == null || !token.startsWith("Bearer ")) {
-      throw new RuntimeException("Authorization 헤더가 없거나 형식이 잘못되었습니다.");
+      throw new CustomException("Authorization 헤더가 없거나 형식이 잘못되었습니다.");
     }
     token = token.substring(7);  // "Bearer " 제거
 
@@ -57,7 +58,7 @@ public class AuthenticatedUserResolver implements HandlerMethodArgumentResolver 
     JwtTokenType tokenType = JwtTokenType.valueOf((String) claims.get("type"));
 
     if (requiredType != tokenType) {
-      throw new RuntimeException("Invalid token type. Expected: " + requiredType);
+      throw new CustomException("Invalid token type. Expected: " + requiredType);
     }
 
     // 사용자 조회
