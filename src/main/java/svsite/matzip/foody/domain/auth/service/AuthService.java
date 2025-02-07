@@ -37,6 +37,7 @@ public class AuthService {
     return user.getId();
   }
 
+  @Transactional
   public TokenResponseDto signin(AuthRequestDto authRequestDto) {
     User user = userRepository.findByEmail(authRequestDto.email())
         .orElseThrow(() -> new CustomException(ErrorCodes.USER_NOT_FOUND));
@@ -49,6 +50,7 @@ public class AuthService {
     return tokenDto;
   }
 
+  @Transactional
   public TokenResponseDto getTokens(String email) {
     Map<String, Object> payload = new HashMap<>();
     payload.put(EMAIL, email);
@@ -62,9 +64,16 @@ public class AuthService {
     user.updateHashedRefreshToken(hashedRefreshToken);
   }
 
+  @Transactional
   public TokenResponseDto refreshToken(User user) {
     TokenResponseDto tokenDto = getTokens(user.getEmail());
     updateHashedRefreshToken(user, tokenDto.refreshToken());
     return tokenDto;
+  }
+
+  @Transactional
+  public long deleteRefreshToken(User user) {
+    user.updateHashedRefreshToken(null);
+    return user.getId();
   }
 }

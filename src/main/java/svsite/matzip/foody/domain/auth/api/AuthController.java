@@ -1,10 +1,9 @@
 package svsite.matzip.foody.domain.auth.api;
 
-import static org.springframework.http.HttpStatus.CREATED;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -52,16 +51,22 @@ public class AuthController {
     return ResponseEntity.ok().body(authService.signin(authRequestDto));
   }
 
-  @Operation(summary = "엑세스, 리프레쉬 토큰 재발급", description = "엑세스 토큰 만료시 리프레쉬 토큰으로 재발급합니다.")
-  @ApiResponses({
-      @ApiResponse(responseCode = "201", description = "엑세스, 리프레쉬 토큰 재발급 성공"),
-      @ApiResponse(responseCode = "404", description = "존재하지 않는 사용자"),
-      @ApiResponse(responseCode = "400", description = "잘못된 요청")
-  })
+  @Operation(summary = "엑세스, 리프레쉬 토큰 재발급",
+      description = "엑세스 토큰 만료 시 리프레쉬 토큰으로 재발급합니다.",
+      security = @SecurityRequirement(name = "bearerAuth"))
   @GetMapping("/refresh")
   public ResponseEntity<TokenResponseDto> refresh(
       @AuthenticatedUser(JwtTokenType.REFRESH) User user) {
     TokenResponseDto tokens = authService.refreshToken(user);
     return ResponseEntity.status(HttpStatus.CREATED).body(tokens);
+  }
+
+  @Operation(
+      summary = "로그아웃",
+      description = "사용자를 로그아웃하고 리프레쉬 토큰을 삭제합니다.",
+      security = @SecurityRequirement(name = "bearerAuth"))
+  @GetMapping("/logout")
+  public ResponseEntity<Long> logout(@AuthenticatedUser User user) {
+    return ResponseEntity.status(HttpStatus.OK).body(authService.deleteRefreshToken(user));
   }
 }
