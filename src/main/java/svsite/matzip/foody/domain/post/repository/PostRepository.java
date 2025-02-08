@@ -1,6 +1,7 @@
 package svsite.matzip.foody.domain.post.repository;
 
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -18,4 +19,12 @@ public interface PostRepository extends JpaRepository<Post, Long> {
       "p.score) " +
       "FROM Post p " +
       "WHERE p.user = :user")
-  List<PostMarkersQueryDto> getAllMarkers(@Param("user") User user);}
+  List<PostMarkersQueryDto> getAllMarkers(@Param("user") User user);
+
+  @Query("SELECT p " +
+      "FROM Post p " +
+      "LEFT JOIN FETCH p.images i " +
+      "WHERE p.user = :user " +
+      "AND p.id = :id")
+  Optional<Post> findByPostIdAndUser(@Param("id") long id, @Param("user") User user);
+}
