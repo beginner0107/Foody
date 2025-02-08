@@ -7,10 +7,13 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 import svsite.matzip.foody.domain.auth.api.AuthController;
 import svsite.matzip.foody.domain.auth.service.AuthService;
+import svsite.matzip.foody.domain.post.api.PostController;
+import svsite.matzip.foody.domain.post.service.PostService;
 import svsite.matzip.foody.global.auth.AuthenticatedUserResolver;
 
 @WebMvcTest(controllers = {
     AuthController.class,
+    PostController.class
 })
 public abstract class ControllerTestSupport {
   @Autowired
@@ -21,4 +24,6 @@ public abstract class ControllerTestSupport {
   protected AuthService authService;
   @MockBean
   protected AuthenticatedUserResolver authenticatedUserResolver;
+  @MockBean
+  protected PostService postService;
 }
