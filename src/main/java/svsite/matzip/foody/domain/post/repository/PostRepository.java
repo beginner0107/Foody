@@ -36,4 +36,10 @@ public interface PostRepository extends JpaRepository<Post, Long> {
       "WHERE p.user = :user " +
       "ORDER BY p.date DESC, i.id ASC")
   Page<Post> findAllRecentPost(Pageable pageable, @Param("user") User user);
+
+  @Query("SELECT p FROM Post p " +
+      "WHERE EXTRACT(YEAR FROM p.date) = :year " +
+      "AND EXTRACT(MONTH FROM p.date) = :month " +
+      "AND p.user = :user")
+  List<Post> findPostsByMonth(@Param("year") int year, @Param("month") int month, @Param("user") User user);
 }

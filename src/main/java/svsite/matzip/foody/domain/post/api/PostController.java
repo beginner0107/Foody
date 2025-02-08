@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.PositiveOrZero;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -128,4 +129,28 @@ public class PostController {
   ) {
     return ResponseEntity.ok(postService.getPostById(id, user));
   }
+
+  @Operation(
+      summary = "해당 연월의 맛집 게시글 목록 조회",
+      description = "사용자가 등록한 맛집 게시글들을 지정한 연도와 월에 따라 일자별로 그룹화하여 조회합니다.",
+      security = @SecurityRequirement(name = "bearerAuth")
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "게시글 목록 조회 성공"),
+      @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+      @ApiResponse(responseCode = "401", description = "인증 실패")
+  })
+  @GetMapping("/posts")
+  public Map<Integer, List<PostResponseDto>> getPostsByMonth(
+      @Parameter(description = "조회할 연도 (YYYY 형식)", example = "2025", required = true)
+      @RequestParam("year") int year,
+
+      @Parameter(description = "조회할 월 (1~12)", example = "2", required = true)
+      @RequestParam("month") int month,
+
+      @AuthenticatedUser User user
+  ) {
+    return postService.getPostsByMonth(year, month, user);
+  }
+
 }

@@ -3,6 +3,8 @@ package svsite.matzip.foody.domain.post.service;
 import static svsite.matzip.foody.global.exception.errorCode.ErrorCodes.POST_NOT_FOUND;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -63,5 +65,16 @@ public class PostService {
     Post foundPost = postRepository.findByPostIdAndUser(id, user)
         .orElseThrow(() -> new CustomException(POST_NOT_FOUND));
     return PostResponseDto.from(foundPost);
+  }
+
+  @Transactional(readOnly = true)
+  public Map<Integer, List<PostResponseDto>> getPostsByMonth(int year, int month, User user) {
+    List<Post> posts = postRepository.findPostsByMonth(year, month, user);
+
+    return posts.stream()
+        .collect(Collectors.groupingBy(
+            post -> post.getDate().getDayOfMonth(),
+            Collectors.mapping(PostResponseDto::from, Collectors.toList())
+        ));
   }
 }
