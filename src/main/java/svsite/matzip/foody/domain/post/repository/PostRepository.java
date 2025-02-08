@@ -42,4 +42,9 @@ public interface PostRepository extends JpaRepository<Post, Long> {
       "AND EXTRACT(MONTH FROM p.date) = :month " +
       "AND p.user = :user")
   List<Post> findPostsByMonth(@Param("year") int year, @Param("month") int month, @Param("user") User user);
+
+  @Query("SELECT p FROM Post p " +
+      "WHERE p.user = :user " +
+      "AND (p.title LIKE %:query% OR p.address LIKE %:query%)")
+  Page<Post> searchByTitleOrAddress(@Param("query") String query, @Param("user") User user, Pageable pageable);
 }

@@ -8,6 +8,8 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import svsite.matzip.foody.domain.auth.entity.User;
@@ -76,5 +78,11 @@ public class PostService {
             post -> post.getDate().getDayOfMonth(),
             Collectors.mapping(PostResponseDto::from, Collectors.toList())
         ));
+  }
+
+  @Transactional(readOnly = true)
+  public Page<PostResponseDto> searchMyPostsByTitleAndAddress(Pageable pageable, String query, User user) {
+    Page<Post> posts = postRepository.searchByTitleOrAddress(query, user, pageable);
+    return posts.map(PostResponseDto::from);
   }
 }

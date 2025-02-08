@@ -11,12 +11,15 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -144,13 +147,35 @@ public class PostController {
   public Map<Integer, List<PostResponseDto>> getPostsByMonth(
       @Parameter(description = "조회할 연도 (YYYY 형식)", example = "2025", required = true)
       @RequestParam("year") int year,
-
       @Parameter(description = "조회할 월 (1~12)", example = "2", required = true)
       @RequestParam("month") int month,
-
       @AuthenticatedUser User user
   ) {
     return postService.getPostsByMonth(year, month, user);
   }
 
+  @Operation(
+      summary = "게시글 제목 또는 주소 검색",
+      description = "사용자가 등록한 맛집 게시글 중 제목이나 주소에 특정 문자열이 포함된 게시글을 페이지 단위로 조회합니다.",
+      security = @SecurityRequirement(name = "bearerAuth")
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "게시글 검색 성공"),
+      @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+      @ApiResponse(responseCode = "401", description = "인증 실패"),
+      @ApiResponse(responseCode = "404", description = "검색 결과 없음")
+  })
+  @GetMapping("/posts/my/search")
+  public Page<PostResponseDto> searchMyPostsByTitleAndAddress(
+      @Parameter(description = "검색할 문자열 (게시글 제목 또는 주소)", required = true, example = "맛집")
+      @RequestParam("query") String query,
+      @Parameter(description = "조회할 페이지 번호 (0부터 시작)", example = "0")
+      @RequestParam(defaultValue = "0") @PositiveOrZero int page,
+      @Parameter(description = "페이지 당 게시글 개수 (1 이상)", example = "10")
+      @RequestParam(defaultValue = "10") @Positive int size,
+      @AuthenticatedUser User user
+  ) {
+    Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "date"));
+    return postService.searchMyPostsByTitleAndAddress(pageable, query, user);
+  }
 }
