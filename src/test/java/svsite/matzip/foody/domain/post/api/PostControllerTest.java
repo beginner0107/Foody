@@ -319,6 +319,53 @@ class PostControllerTest extends ControllerTestSupport {
     verify(postService).getPostsByMonth(year, month, mockUser);
   }
 
+  @Test
+  @DisplayName("게시글 제목 또는 주소로 성공적으로 검색한다")
+  void searchMyPostsByTitleAndAddress_success() throws Exception {
+    // given
+    User mockUser = setupAuthenticatedUser();
+
+    List<PostResponseDto> postList = List.of(
+        createPostResponseDto(1L, 37.5665, 126.9780, MarkerColor.RED, "서울특별시 종로구", "맛집 소개 1"),
+        createPostResponseDto(2L, 35.1796, 129.0756, MarkerColor.BLUE, "부산광역시 중구", "맛집 소개 2")
+    );
+
+    Page<PostResponseDto> responsePage = new PageImpl<>(postList);
+
+    when(postService.searchMyPostsByTitleAndAddress(any(PageRequest.class), eq("맛집"), any(User.class)))
+        .thenReturn(responsePage);
+
+    // when & then
+    mockMvc.perform(get("/posts/my/search")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer validToken")
+            .param("query", "맛집")
+            .param("page", "0")
+            .param("size", "10")
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content.length()").value(2))
+        .andExpect(jsonPath("$.content[0].id").value(1))
+        .andExpect(jsonPath("$.content[0].title").value("맛집 소개 1"))
+        .andExpect(jsonPath("$.content[0].address").value("서울특별시 종로구"))
+        .andExpect(jsonPath("$.content[1].title").value("맛집 소개 2"))
+        .andDo(print());
+
+    verify(postService).searchMyPostsByTitleAndAddress(any(PageRequest.class), eq("맛집"), eq(mockUser));
+  }
+
+  @Test
+  @DisplayName("검색 문자열이 없을 경우 400 에러를 반환한다")
+  void searchMyPostsByTitleAndAddress_missingQuery() throws Exception {
+    mockMvc.perform(get("/posts/my/search")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer validToken")
+            .param("page", "0")
+            .param("size", "10")
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("필수 요청 파라미터 'query'가 누락되었습니다."))
+        .andDo(print());
+  }
+
   private MarkersResponseDto createMarker(Long id, double latitude, double longitude, MarkerColor color, int score) {
     return MarkersResponseDto.builder()
         .id(id)

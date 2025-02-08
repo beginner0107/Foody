@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -28,6 +29,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.util.ReflectionTestUtils;
 import svsite.matzip.foody.domain.auth.entity.User;
 import svsite.matzip.foody.domain.post.api.dto.request.CreatePostDto;
@@ -42,6 +45,7 @@ import svsite.matzip.foody.global.exception.support.CustomException;
 
 @ExtendWith(MockitoExtension.class)
 class PostServiceTest {
+
   @InjectMocks
   private PostService postService;
 
@@ -295,7 +299,8 @@ class PostServiceTest {
     when(postRepository.findByPostIdAndUser(1L, mockUser)).thenReturn(Optional.empty());
 
     // when & then
-    CustomException exception = assertThrows(CustomException.class, () -> postService.getPostById(1L, mockUser));
+    CustomException exception = assertThrows(CustomException.class,
+        () -> postService.getPostById(1L, mockUser));
 
     assertEquals("해당 게시물을 찾을 수 없습니다.", exception.getMessage(), "예외 메시지가 예상과 일치해야 합니다.");
 
@@ -347,7 +352,8 @@ class PostServiceTest {
     int year = 2025;
     int month = 1;
 
-    when(postRepository.findPostsByMonth(year, month, mockUser)).thenReturn(Collections.emptyList());
+    when(postRepository.findPostsByMonth(year, month, mockUser)).thenReturn(
+        Collections.emptyList());
 
     // when
     Map<Integer, List<PostResponseDto>> result = postService.getPostsByMonth(year, month, mockUser);
@@ -356,6 +362,61 @@ class PostServiceTest {
     assertNotNull(result, "결과는 null이 아니어야 합니다.");
     assertTrue(result.isEmpty(), "결과는 빈 맵이어야 합니다.");
     verify(postRepository).findPostsByMonth(year, month, mockUser);
+  }
+
+  @Test
+  @DisplayName("사용자가 등록한 게시글을 제목 또는 주소로 성공적으로 검색한다")
+  void searchMyPostsByTitleAndAddress_success() {
+    // given
+    User mockUser = User.builder()
+        .email("test@example.com")
+        .nickname("테스터")
+        .build();
+
+    Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "date"));
+
+    List<Post> posts = List.of(
+        createMockPost(1L, "맛집 소개 1", "서울특별시 종로구"),
+        createMockPost(2L, "맛집 소개 2", "부산광역시 중구")
+    );
+
+    Page<Post> postPage = new PageImpl<>(posts, pageable, posts.size());
+
+    when(postRepository.searchByTitleOrAddress(eq("맛집"), eq(mockUser), eq(pageable)))
+        .thenReturn(postPage);
+
+    // when
+    Page<PostResponseDto> result = postService.searchMyPostsByTitleAndAddress(pageable, "맛집",
+        mockUser);
+
+    // then
+    assertNotNull(result, "결과는 null이 아니어야 합니다.");
+    assertEquals(2, result.getContent().size(), "게시글 개수가 예상과 일치해야 합니다.");
+    assertEquals("맛집 소개 1", result.getContent().getFirst().title(), "첫 번째 게시글 제목이 예상 값과 일치해야 합니다.");
+    assertEquals("서울특별시 종로구", result.getContent().getFirst().address(),
+        "첫 번째 게시글 주소가 예상 값과 일치해야 합니다.");
+
+    verify(postRepository).searchByTitleOrAddress(eq("맛집"), eq(mockUser), eq(pageable));
+  }
+
+  @Test
+  @DisplayName("검색 결과가 없을 경우 빈 페이지를 반환한다")
+  void searchMyPostsByTitleAndAddress_noResults() {
+    // given
+    User mockUser = User.builder().email("test@example.com").nickname("테스터").build();
+    Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "date"));
+
+    when(postRepository.searchByTitleOrAddress(eq("없는 키워드"), eq(mockUser), eq(pageable)))
+        .thenReturn(Page.empty(pageable));
+
+    // when
+    Page<PostResponseDto> result = postService.searchMyPostsByTitleAndAddress(pageable, "없는 키워드",
+        mockUser);
+
+    // then
+    assertNotNull(result, "결과는 null이 아니어야 합니다.");
+    assertTrue(result.isEmpty(), "결과 페이지는 빈 페이지여야 합니다.");
+    verify(postRepository).searchByTitleOrAddress(eq("없는 키워드"), eq(mockUser), eq(pageable));
   }
 
   private Post createMockPost(Long id, String title, String description) {
@@ -403,7 +464,8 @@ class PostServiceTest {
   }
 
 
-  private PostMarkersQueryDto createMarker(Long id, double lat, double lon, MarkerColor color, int score) {
+  private PostMarkersQueryDto createMarker(Long id, double lat, double lon, MarkerColor color,
+      int score) {
     return PostMarkersQueryDto.builder()
         .id(id)
         .latitude(BigDecimal.valueOf(lat).setScale(6, RoundingMode.HALF_UP))
