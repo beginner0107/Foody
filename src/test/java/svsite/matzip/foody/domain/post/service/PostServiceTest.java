@@ -4,8 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -22,6 +24,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 import svsite.matzip.foody.domain.auth.entity.User;
 import svsite.matzip.foody.domain.post.api.dto.request.CreatePostDto;
@@ -32,6 +37,7 @@ import svsite.matzip.foody.domain.post.entity.MarkerColor;
 import svsite.matzip.foody.domain.post.entity.Post;
 import svsite.matzip.foody.domain.post.repository.PostRepository;
 import svsite.matzip.foody.domain.post.repository.dto.PostMarkersQueryDto;
+import svsite.matzip.foody.global.exception.support.CustomException;
 
 @ExtendWith(MockitoExtension.class)
 class PostServiceTest {
@@ -149,6 +155,114 @@ class PostServiceTest {
     assertEquals(updatePostDto.date(), responseDto.date(), "날짜가 예상 값과 일치해야 합니다.");
 
     verify(postRepository).findByPostIdAndUser(1L, mockUser);
+  }
+
+  @Test
+  @DisplayName("맛집 글을 성공적으로 삭제한다")
+  void deletePost() {
+    // given
+    User mockUser = User.builder().email("test@example.com").nickname("테스터").build();
+
+    Post existingPost = Post.builder()
+        .id(1L)
+        .latitude(BigDecimal.valueOf(37.5665))
+        .longitude(BigDecimal.valueOf(126.9780))
+        .color(MarkerColor.RED)
+        .address("서울특별시 종로구")
+        .title("기존 맛집 소개")
+        .description("기존 설명")
+        .date(LocalDateTime.of(2025, 2, 7, 12, 0))
+        .score(8)
+        .user(mockUser)
+        .build();
+
+    // Mock 설정: 게시글이 존재하는 경우
+    when(postRepository.findByPostIdAndUser(1L, mockUser)).thenReturn(Optional.of(existingPost));
+
+    // when
+    postService.deletePost(1L, mockUser);
+
+    // then
+    verify(postRepository).findByPostIdAndUser(1L, mockUser);  // 게시글 조회 검증
+    verify(postRepository).delete(existingPost);               // 삭제 메서드 호출 검증
+  }
+
+  @Test
+  @DisplayName("존재하지 않는 게시글 삭제 시 예외가 발생한다")
+  void deletePost_postNotFound_throwsException() {
+    // given
+    User mockUser = User.builder().email("test@example.com").nickname("테스터").build();
+
+    when(postRepository.findByPostIdAndUser(1L, mockUser)).thenReturn(Optional.empty());
+
+    // when & then
+    CustomException exception = assertThrows(CustomException.class, () -> {
+      postService.deletePost(1L, mockUser);
+    });
+
+    assertEquals("해당 게시물을 찾을 수 없습니다.", exception.getMessage(), "예외 메시지가 예상과 일치해야 합니다.");
+
+    verify(postRepository, never()).delete(any(Post.class));
+  }
+
+  @Test
+  @DisplayName("등록된 맛집 게시글 목록을 페이지 단위로 성공적으로 조회한다")
+  void getPosts_success() {
+    // given
+    User mockUser = User.builder().email("test@example.com").build();
+    PageRequest pageable = PageRequest.of(0, 10);
+
+    List<Post> posts = List.of(
+        createMockPost(1L, "맛집 소개 1", "맛있는 집입니다 1"),
+        createMockPost(2L, "맛집 소개 2", "맛있는 집입니다 2")
+    );
+
+    Page<Post> postPage = new PageImpl<>(posts, pageable, posts.size());
+
+    when(postRepository.findAllRecentPost(pageable, mockUser)).thenReturn(postPage);
+
+    // when
+    Page<PostResponseDto> result = postService.getPosts(pageable, mockUser);
+
+    // then
+    assertNotNull(result, "결과는 null이 아니어야 합니다.");
+    assertEquals(2, result.getContent().size(), "게시글 개수가 예상과 일치해야 합니다.");
+    assertEquals("맛집 소개 1", result.getContent().getFirst().title(), "첫 번째 게시글 제목이 예상 값과 일치해야 합니다.");
+
+    verify(postRepository).findAllRecentPost(pageable, mockUser);
+  }
+
+  @Test
+  @DisplayName("등록된 게시글이 없을 경우 빈 페이지를 반환한다")
+  void getPosts_emptyPage() {
+    // given
+    User mockUser = User.builder().email("empty@example.com").build();
+    PageRequest pageable = PageRequest.of(0, 10);
+
+    when(postRepository.findAllRecentPost(pageable, mockUser)).thenReturn(Page.empty(pageable));
+
+    // when
+    Page<PostResponseDto> result = postService.getPosts(pageable, mockUser);
+
+    // then
+    assertNotNull(result, "결과는 null이 아니어야 합니다.");
+    assertTrue(result.isEmpty(), "결과 페이지는 빈 페이지여야 합니다.");
+    verify(postRepository).findAllRecentPost(pageable, mockUser);
+  }
+
+  private Post createMockPost(Long id, String title, String description) {
+    return Post.builder()
+        .id(id)
+        .latitude(BigDecimal.valueOf(37.5665))
+        .longitude(BigDecimal.valueOf(126.9780))
+        .color(MarkerColor.RED)
+        .address("서울특별시 종로구")
+        .title(title)
+        .description(description)
+        .date(LocalDateTime.now())
+        .score(9)
+        .user(User.builder().email("test@example.com").build())
+        .build();
   }
 
   private CreatePostDto getSampleCreatePostDto() {

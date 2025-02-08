@@ -18,6 +18,9 @@ import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import svsite.matzip.foody.domain.auth.ControllerTestSupport;
@@ -155,6 +158,41 @@ class PostControllerTest extends ControllerTestSupport {
     verify(postService).updatePost(eq(1L), any(UpdatePostDto.class), eq(mockUser));
   }
 
+  @Test
+  @DisplayName("사용자가 등록한 모든 맛집 게시글 목록을 페이지 단위로 조회한다")
+  void getPosts() throws Exception {
+    // given
+    User mockUser = setupAuthenticatedUser();
+
+    List<PostResponseDto> postList = List.of(
+        createPostResponseDto(1L, 37.5665, 126.9780, MarkerColor.RED, "서울특별시 종로구", "맛집 소개 1"),
+        createPostResponseDto(2L, 35.1796, 129.0756, MarkerColor.BLUE, "부산광역시 중구", "맛집 소개 2")
+    );
+
+    Page<PostResponseDto> responsePage = new PageImpl<>(postList);
+
+    when(postService.getPosts(any(PageRequest.class), any(User.class))).thenReturn(responsePage);
+
+    // when & then
+    mockMvc.perform(get("/posts/my")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer validToken")
+            .param("page", "0")
+            .param("size", "10")
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content.length()").value(2))
+        .andExpect(jsonPath("$.content[0].id").value(1))
+        .andExpect(jsonPath("$.content[0].latitude").value(37.5665))
+        .andExpect(jsonPath("$.content[0].longitude").value(126.9780))
+        .andExpect(jsonPath("$.content[0].color").value("RED"))
+        .andExpect(jsonPath("$.content[0].address").value("서울특별시 종로구"))
+        .andExpect(jsonPath("$.content[0].title").value("맛집 소개 1"))
+        .andExpect(jsonPath("$.content[1].title").value("맛집 소개 2"))
+        .andDo(print());
+
+    verify(postService).getPosts(any(PageRequest.class), eq(mockUser));
+  }
+
   private MarkersResponseDto createMarker(Long id, double latitude, double longitude, MarkerColor color, int score) {
     return MarkersResponseDto.builder()
         .id(id)
@@ -183,5 +221,21 @@ class PostControllerTest extends ControllerTestSupport {
     when(authenticatedUserResolver.resolveArgument(any(), any(), any(), any())).thenReturn(mockUser);
 
     return mockUser;
+  }
+
+  private PostResponseDto createPostResponseDto(Long id, double lat, double lon, MarkerColor color, String address, String title) {
+    return PostResponseDto.builder()
+        .id(id)
+        .latitude(BigDecimal.valueOf(lat))
+        .longitude(BigDecimal.valueOf(lon))
+        .color(color)
+        .address(address)
+        .title(title)
+        .description("맛집 설명입니다.")
+        .date(LocalDateTime.of(2025, 2, 8, 12, 0, 0))
+        .score(9)
+        .createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now())
+        .build();
   }
 }
