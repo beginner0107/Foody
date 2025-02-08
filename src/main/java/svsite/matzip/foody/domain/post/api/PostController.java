@@ -107,4 +107,25 @@ public class PostController {
   ) {
     return ResponseEntity.ok(postService.getPosts(PageRequest.of(page, size), user));
   }
+
+  @Operation(
+      summary = "게시글 단건 조회",
+      description = "사용자가 등록한 특정 게시글을 ID로 조회합니다.",
+      security = @SecurityRequirement(name = "bearerAuth")
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "게시글 조회 성공"),
+      @ApiResponse(responseCode = "404", description = "존재하지 않는 게시글"),
+      @ApiResponse(responseCode = "401", description = "인증 실패"),
+      @ApiResponse(responseCode = "400", description = "잘못된 요청")
+  })
+  @GetMapping("/posts/{id}")
+  public ResponseEntity<PostResponseDto> getPostById(
+      @Parameter(description = "조회할 게시글 ID", example = "1", required = true)
+      @PathVariable("id") long id,
+
+      @AuthenticatedUser User user
+  ) {
+    return ResponseEntity.ok(postService.getPostById(id, user));
+  }
 }

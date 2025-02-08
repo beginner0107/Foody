@@ -57,4 +57,11 @@ public class PostService {
     return postRepository.findAllRecentPost(pageable, user)
         .map(PostResponseDto::from);
   }
+
+  @Transactional(readOnly = true)
+  public PostResponseDto getPostById(long id, User user) {
+    Post foundPost = postRepository.findByPostIdAndUser(id, user)
+        .orElseThrow(() -> new CustomException(POST_NOT_FOUND));
+    return PostResponseDto.from(foundPost);
+  }
 }
