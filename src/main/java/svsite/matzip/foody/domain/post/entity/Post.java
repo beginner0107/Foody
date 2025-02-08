@@ -28,6 +28,8 @@ import lombok.NoArgsConstructor;
 import svsite.matzip.foody.domain.auth.entity.User;
 import svsite.matzip.foody.domain.favorite.entity.Favorite;
 import svsite.matzip.foody.domain.image.api.Image;
+import svsite.matzip.foody.domain.post.api.dto.request.CreatePostDto;
+import svsite.matzip.foody.domain.post.api.dto.request.UpdatePostDto;
 import svsite.matzip.foody.global.entity.BaseEntity;
 
 @Entity
@@ -72,6 +74,28 @@ public class Post extends BaseEntity {
 
   @OneToMany(mappedBy = "post", orphanRemoval = true)
   private List<Favorite> favorites;
+
+  public static Post create(CreatePostDto postDto, User user) {
+    return Post.builder()
+        .latitude(postDto.latitude())
+        .longitude(postDto.longitude())
+        .color(postDto.color())
+        .address(postDto.address())
+        .title(postDto.title())
+        .description(postDto.description())
+        .date(postDto.date())
+        .score(postDto.score())
+        .user(user)
+        .build();
+  }
+
+  public void update(UpdatePostDto postDto) {
+    this.title = postDto.title();
+    this.description = postDto.description();
+    this.color = postDto.color();
+    this.date = postDto.date();
+    this.score = postDto.score();
+  }
 
   @Override
   public boolean equals(Object o) {

@@ -124,7 +124,8 @@ class AuthServiceTest {
     when(passwordEncoder.matches("wrongPassword", "encodedPassword")).thenReturn(false);
 
     // when & then
-    CustomException exception = assertThrows(CustomException.class, () -> authService.signin(authRequestDto));
+    CustomException exception = assertThrows(CustomException.class,
+        () -> authService.signin(authRequestDto));
     assertEquals(ErrorCodes.USER_WRONG_PASSWORD, exception.getErrorCode());
     verify(userRepository).findByEmail("test@example.com");
     verify(passwordEncoder).matches("wrongPassword", "encodedPassword");
@@ -140,7 +141,8 @@ class AuthServiceTest {
     when(userRepository.findByEmail("notfound@example.com")).thenReturn(Optional.empty());
 
     // when & then
-    CustomException exception = assertThrows(CustomException.class, () -> authService.signin(authRequestDto));
+    CustomException exception = assertThrows(CustomException.class,
+        () -> authService.signin(authRequestDto));
     assertEquals(ErrorCodes.USER_NOT_FOUND, exception.getErrorCode());
     verify(userRepository).findByEmail("notfound@example.com");
     verify(passwordEncoder, never()).matches(anyString(), anyString());
