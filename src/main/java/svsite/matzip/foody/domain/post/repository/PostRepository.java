@@ -2,6 +2,8 @@ package svsite.matzip.foody.domain.post.repository;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -27,4 +29,11 @@ public interface PostRepository extends JpaRepository<Post, Long> {
       "WHERE p.user = :user " +
       "AND p.id = :id")
   Optional<Post> findByPostIdAndUser(@Param("id") long id, @Param("user") User user);
+
+  @Query("SELECT p " +
+      "FROM Post p " +
+      "LEFT JOIN FETCH p.images i " +
+      "WHERE p.user = :user " +
+      "ORDER BY p.date DESC, i.id ASC")
+  Page<Post> findAllRecentPost(Pageable pageable, @Param("user") User user);
 }

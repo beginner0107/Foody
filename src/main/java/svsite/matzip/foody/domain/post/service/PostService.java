@@ -4,6 +4,8 @@ import static svsite.matzip.foody.global.exception.errorCode.ErrorCodes.POST_NOT
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import svsite.matzip.foody.domain.auth.entity.User;
@@ -41,5 +43,18 @@ public class PostService {
         .orElseThrow(() -> new CustomException(POST_NOT_FOUND));
     post.update(updatePostDto);
     return PostResponseDto.from(post);
+  }
+
+  @Transactional
+  public void deletePost(long id, User user) {
+    Post post = postRepository.findByPostIdAndUser(id, user)
+        .orElseThrow(() -> new CustomException(POST_NOT_FOUND));
+    postRepository.delete(post);
+  }
+
+  @Transactional(readOnly = true)
+  public Page<PostResponseDto> getPosts(PageRequest pageable, User user) {
+    return postRepository.findAllRecentPost(pageable, user)
+        .map(PostResponseDto::from);
   }
 }
