@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static svsite.matzip.foody.global.exception.errorCode.ErrorCodes.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -30,6 +31,8 @@ import svsite.matzip.foody.domain.post.api.dto.request.UpdatePostDto;
 import svsite.matzip.foody.domain.post.api.dto.response.MarkersResponseDto;
 import svsite.matzip.foody.domain.post.api.dto.response.PostResponseDto;
 import svsite.matzip.foody.domain.post.entity.MarkerColor;
+import svsite.matzip.foody.global.exception.errorCode.ErrorCodes;
+import svsite.matzip.foody.global.exception.support.CustomException;
 
 class PostControllerTest extends ControllerTestSupport {
 
@@ -191,6 +194,65 @@ class PostControllerTest extends ControllerTestSupport {
         .andDo(print());
 
     verify(postService).getPosts(any(PageRequest.class), eq(mockUser));
+  }
+
+  @Test
+  @DisplayName("게시글 단건을 성공적으로 조회한다")
+  void getPostById() throws Exception {
+    // given
+    User mockUser = setupAuthenticatedUser();
+
+    PostResponseDto postResponseDto = PostResponseDto.builder()
+        .id(1L)
+        .latitude(BigDecimal.valueOf(37.5665))
+        .longitude(BigDecimal.valueOf(126.9780))
+        .color(MarkerColor.RED)
+        .address("서울특별시 종로구")
+        .title("맛집 소개")
+        .description("정말 맛있는 집입니다!")
+        .date(LocalDateTime.of(2025, 2, 8, 12, 0, 0))
+        .score(9)
+        .createdAt(LocalDateTime.now().minusDays(1))
+        .updatedAt(LocalDateTime.now())
+        .build();
+
+    when(postService.getPostById(eq(1L), any(User.class))).thenReturn(postResponseDto);
+
+    // when & then
+    mockMvc.perform(get("/posts/{id}", 1L)
+            .header(HttpHeaders.AUTHORIZATION, "Bearer validToken")
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(1L))
+        .andExpect(jsonPath("$.latitude").value(37.5665))
+        .andExpect(jsonPath("$.longitude").value(126.9780))
+        .andExpect(jsonPath("$.color").value("RED"))
+        .andExpect(jsonPath("$.address").value("서울특별시 종로구"))
+        .andExpect(jsonPath("$.title").value("맛집 소개"))
+        .andExpect(jsonPath("$.description").value("정말 맛있는 집입니다!"))
+        .andExpect(jsonPath("$.score").value(9))
+        .andDo(print());
+
+    verify(postService).getPostById(eq(1L), eq(mockUser));
+  }
+
+  @Test
+  @DisplayName("존재하지 않는 게시글 조회 시 404 상태코드를 반환한다")
+  void getPostById_postNotFound() throws Exception {
+    // given
+    User mockUser = setupAuthenticatedUser();
+
+    when(postService.getPostById(eq(1L), any(User.class))).thenThrow(new CustomException(POST_NOT_FOUND));
+
+    // when & then
+    mockMvc.perform(get("/posts/{id}", 1L)
+            .header(HttpHeaders.AUTHORIZATION, "Bearer validToken")
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.message").value(POST_NOT_FOUND.defaultMessage()))
+        .andDo(print());
+
+    verify(postService).getPostById(eq(1L), eq(mockUser));
   }
 
   private MarkersResponseDto createMarker(Long id, double latitude, double longitude, MarkerColor color, int score) {

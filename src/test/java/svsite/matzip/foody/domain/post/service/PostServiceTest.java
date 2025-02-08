@@ -250,6 +250,57 @@ class PostServiceTest {
     verify(postRepository).findAllRecentPost(pageable, mockUser);
   }
 
+  @Test
+  @DisplayName("게시글 단건을 성공적으로 조회한다")
+  void getPostById_success() {
+    // given
+    User mockUser = User.builder().email("test@example.com").build();
+
+    Post existingPost = Post.builder()
+        .id(1L)
+        .latitude(BigDecimal.valueOf(37.5665))
+        .longitude(BigDecimal.valueOf(126.9780))
+        .color(MarkerColor.RED)
+        .address("서울특별시 종로구")
+        .title("맛집 소개")
+        .description("정말 맛있는 집입니다!")
+        .date(LocalDateTime.of(2025, 2, 8, 12, 0, 0))
+        .score(9)
+        .user(mockUser)
+        .build();
+
+    when(postRepository.findByPostIdAndUser(1L, mockUser)).thenReturn(Optional.of(existingPost));
+
+    // when
+    PostResponseDto responseDto = postService.getPostById(1L, mockUser);
+
+    // then
+    assertNotNull(responseDto, "응답은 null이 아니어야 합니다.");
+    assertEquals(1L, responseDto.id(), "ID가 예상 값과 일치해야 합니다.");
+    assertEquals(existingPost.getTitle(), responseDto.title(), "제목이 예상 값과 일치해야 합니다.");
+    assertEquals(existingPost.getLatitude(), responseDto.latitude(), "위도가 예상 값과 일치해야 합니다.");
+    assertEquals(existingPost.getLongitude(), responseDto.longitude(), "경도가 예상 값과 일치해야 합니다.");
+    assertEquals(existingPost.getColor(), responseDto.color(), "마커 색상이 예상 값과 일치해야 합니다.");
+
+    verify(postRepository).findByPostIdAndUser(1L, mockUser);
+  }
+
+  @Test
+  @DisplayName("존재하지 않는 게시글 조회 시 예외가 발생한다")
+  void getPostById_postNotFound_throwsException() {
+    // given
+    User mockUser = User.builder().email("test@example.com").build();
+
+    when(postRepository.findByPostIdAndUser(1L, mockUser)).thenReturn(Optional.empty());
+
+    // when & then
+    CustomException exception = assertThrows(CustomException.class, () -> postService.getPostById(1L, mockUser));
+
+    assertEquals("해당 게시물을 찾을 수 없습니다.", exception.getMessage(), "예외 메시지가 예상과 일치해야 합니다.");
+
+    verify(postRepository).findByPostIdAndUser(1L, mockUser);
+  }
+
   private Post createMockPost(Long id, String title, String description) {
     return Post.builder()
         .id(id)
