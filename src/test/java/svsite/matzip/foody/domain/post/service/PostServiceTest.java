@@ -2,13 +2,16 @@ package svsite.matzip.foody.domain.post.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -18,9 +21,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 import svsite.matzip.foody.domain.auth.entity.User;
+import svsite.matzip.foody.domain.post.api.dto.request.CreatePostDto;
 import svsite.matzip.foody.domain.post.api.dto.response.MarkersResponseDto;
+import svsite.matzip.foody.domain.post.api.dto.response.PostResponseDto;
 import svsite.matzip.foody.domain.post.entity.MarkerColor;
+import svsite.matzip.foody.domain.post.entity.Post;
 import svsite.matzip.foody.domain.post.repository.PostRepository;
 import svsite.matzip.foody.domain.post.repository.dto.PostMarkersQueryDto;
 
@@ -74,6 +81,42 @@ class PostServiceTest {
             tuple(3L, roundCoordinate(33.4996), roundCoordinate(126.5312), MarkerColor.GREEN, 9)
         );
   }
+
+  @Test
+  @DisplayName("맛집 글을 성공적으로 등록한다")
+  void createPost() {
+    User mockUser = User.builder().email("test@example.com").nickname("테스터").build();
+    CreatePostDto createPostDto = getSampleCreatePostDto();
+
+    when(postRepository.save(any(Post.class))).thenAnswer(invocation -> {
+      Post post = invocation.getArgument(0);
+      ReflectionTestUtils.setField(post, "id", 1L);  // save 후 ID 설정
+      return post;
+    });
+
+    PostResponseDto responseDto = postService.createPost(createPostDto, mockUser);
+
+    assertNotNull(responseDto, "응답은 null이 아니어야 합니다.");
+    assertEquals(1L, responseDto.id(), "ID가 예상 값과 일치해야 합니다.");
+    assertEquals(createPostDto.title(), responseDto.title(), "제목이 예상 값과 일치해야 합니다.");
+
+    verify(postRepository).save(any(Post.class));
+  }
+
+  private CreatePostDto getSampleCreatePostDto() {
+    return new CreatePostDto(
+        BigDecimal.valueOf(37.5665),
+        BigDecimal.valueOf(126.9780),
+        MarkerColor.RED,
+        "서울특별시 종로구",
+        "맛집 소개",
+        "정말 맛있는 집입니다!",
+        LocalDateTime.of(2025, 2, 8, 12, 0, 0),
+        9,
+        List.of("https://example.com/image1.jpg", "https://example.com/image2.jpg")
+    );
+  }
+
 
   private PostMarkersQueryDto createMarker(Long id, double lat, double lon, MarkerColor color, int score) {
     return PostMarkersQueryDto.builder()
