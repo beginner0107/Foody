@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -22,6 +23,7 @@ import org.springframework.http.MediaType;
 import svsite.matzip.foody.domain.auth.ControllerTestSupport;
 import svsite.matzip.foody.domain.auth.entity.User;
 import svsite.matzip.foody.domain.post.api.dto.request.CreatePostDto;
+import svsite.matzip.foody.domain.post.api.dto.request.UpdatePostDto;
 import svsite.matzip.foody.domain.post.api.dto.response.MarkersResponseDto;
 import svsite.matzip.foody.domain.post.api.dto.response.PostResponseDto;
 import svsite.matzip.foody.domain.post.entity.MarkerColor;
@@ -103,6 +105,54 @@ class PostControllerTest extends ControllerTestSupport {
         .andExpect(jsonPath("$.score").value(9));
 
     verify(postService).createPost(any(CreatePostDto.class), eq(mockUser));
+  }
+
+  @Test
+  @DisplayName("맛집 글을 성공적으로 수정한다")
+  void updatePost() throws Exception {
+    // given
+    User mockUser = setupAuthenticatedUser();
+
+    UpdatePostDto updatePostDto = new UpdatePostDto(
+        MarkerColor.BLUE,
+        "맛집 수정 소개",
+        "수정된 정말 맛있는 집입니다!",
+        LocalDateTime.of(2025, 2, 8, 18, 0, 0),
+        8
+    );
+
+    PostResponseDto responseDto = PostResponseDto.builder()
+        .id(1L)
+        .latitude(BigDecimal.valueOf(37.5665))
+        .longitude(BigDecimal.valueOf(126.9780))
+        .color(MarkerColor.BLUE)
+        .address("서울특별시 종로구")
+        .title("맛집 수정 소개")
+        .description("수정된 정말 맛있는 집입니다!")
+        .date(LocalDateTime.of(2025, 2, 8, 18, 0, 0))
+        .score(8)
+        .createdAt(LocalDateTime.now().minusDays(1))
+        .updatedAt(LocalDateTime.now())
+        .build();
+
+    when(postService.updatePost(eq(1L), any(UpdatePostDto.class), any(User.class))).thenReturn(responseDto);
+
+    // when & then
+    mockMvc.perform(patch("/posts/{id}", 1L)
+            .header(HttpHeaders.AUTHORIZATION, "Bearer validToken")
+            .content(objectMapper.writeValueAsString(updatePostDto))
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(1L))
+        .andExpect(jsonPath("$.latitude").value(37.5665))
+        .andExpect(jsonPath("$.longitude").value(126.9780))
+        .andExpect(jsonPath("$.color").value("BLUE"))
+        .andExpect(jsonPath("$.address").value("서울특별시 종로구"))
+        .andExpect(jsonPath("$.title").value("맛집 수정 소개"))
+        .andExpect(jsonPath("$.description").value("수정된 정말 맛있는 집입니다!"))
+        .andExpect(jsonPath("$.score").value(8));
+
+    verify(postService).updatePost(eq(1L), any(UpdatePostDto.class), eq(mockUser));
   }
 
   private MarkersResponseDto createMarker(Long id, double latitude, double longitude, MarkerColor color, int score) {

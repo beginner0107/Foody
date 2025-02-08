@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,6 +25,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import svsite.matzip.foody.domain.auth.entity.User;
 import svsite.matzip.foody.domain.post.api.dto.request.CreatePostDto;
+import svsite.matzip.foody.domain.post.api.dto.request.UpdatePostDto;
 import svsite.matzip.foody.domain.post.api.dto.response.MarkersResponseDto;
 import svsite.matzip.foody.domain.post.api.dto.response.PostResponseDto;
 import svsite.matzip.foody.domain.post.entity.MarkerColor;
@@ -101,6 +103,52 @@ class PostServiceTest {
     assertEquals(createPostDto.title(), responseDto.title(), "제목이 예상 값과 일치해야 합니다.");
 
     verify(postRepository).save(any(Post.class));
+  }
+
+  @Test
+  @DisplayName("맛집 글을 성공적으로 수정한다")
+  void updatePost() {
+    // given
+    User mockUser = User.builder()
+        .email("test@example.com")
+        .nickname("테스터")
+        .build();
+
+    Post existingPost = Post.builder()
+        .id(1L)
+        .latitude(BigDecimal.valueOf(37.5665))
+        .longitude(BigDecimal.valueOf(126.9780))
+        .color(MarkerColor.RED)
+        .address("서울특별시 종로구")
+        .title("기존 맛집 소개")
+        .description("기존 설명")
+        .date(LocalDateTime.of(2025, 2, 7, 12, 0))
+        .score(8)
+        .user(mockUser)
+        .build();
+
+    UpdatePostDto updatePostDto = new UpdatePostDto(
+        MarkerColor.BLUE,
+        "수정된 맛집 소개",
+        "수정된 설명",
+        LocalDateTime.of(2025, 2, 8, 15, 30, 0),
+        9
+    );
+
+    when(postRepository.findByPostIdAndUser(1L, mockUser)).thenReturn(Optional.of(existingPost));
+
+    // when
+    PostResponseDto responseDto = postService.updatePost(1L, updatePostDto, mockUser);
+
+    // then
+    assertNotNull(responseDto, "응답은 null이 아니어야 합니다.");
+    assertEquals(1L, responseDto.id(), "ID가 예상 값과 일치해야 합니다.");
+    assertEquals(updatePostDto.title(), responseDto.title(), "제목이 예상 값과 일치해야 합니다.");
+    assertEquals(updatePostDto.color(), responseDto.color(), "마커 색상이 예상 값과 일치해야 합니다.");
+    assertEquals(updatePostDto.description(), responseDto.description(), "설명이 예상 값과 일치해야 합니다.");
+    assertEquals(updatePostDto.date(), responseDto.date(), "날짜가 예상 값과 일치해야 합니다.");
+
+    verify(postRepository).findByPostIdAndUser(1L, mockUser);
   }
 
   private CreatePostDto getSampleCreatePostDto() {
