@@ -16,7 +16,9 @@ import static svsite.matzip.foody.global.exception.errorCode.ErrorCodes.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Page;
@@ -31,6 +33,7 @@ import svsite.matzip.foody.domain.post.api.dto.request.UpdatePostDto;
 import svsite.matzip.foody.domain.post.api.dto.response.MarkersResponseDto;
 import svsite.matzip.foody.domain.post.api.dto.response.PostResponseDto;
 import svsite.matzip.foody.domain.post.entity.MarkerColor;
+import svsite.matzip.foody.domain.post.entity.Post;
 import svsite.matzip.foody.global.exception.errorCode.ErrorCodes;
 import svsite.matzip.foody.global.exception.support.CustomException;
 
@@ -255,6 +258,67 @@ class PostControllerTest extends ControllerTestSupport {
     verify(postService).getPostById(eq(1L), eq(mockUser));
   }
 
+  @Test
+  @DisplayName("특정 년도와 월의 게시글 목록을 날짜별로 조회한다")
+  void getPostsByMonth_success() throws Exception {
+    // given
+    User mockUser = setupAuthenticatedUser();
+    int year = 2025;
+    int month = 2;
+
+    Map<Integer, List<PostResponseDto>> responseMap = Map.of(
+        8, List.of(
+            createPostResponseDto(1L, "맛집 소개 1", LocalDateTime.of(2025, 2, 8, 12, 0, 0)),
+            createPostResponseDto(2L, "맛집 소개 2", LocalDateTime.of(2025, 2, 8, 18, 0, 0))
+        ),
+        9, List.of(
+            createPostResponseDto(3L, "맛집 소개 3", LocalDateTime.of(2025, 2, 9, 14, 0, 0))
+        )
+    );
+
+    when(postService.getPostsByMonth(year, month, mockUser)).thenReturn(responseMap);
+
+    // when & then
+    mockMvc.perform(get("/posts")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer validToken")
+            .param("year", String.valueOf(year))
+            .param("month", String.valueOf(month))
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$['8'].length()").value(2))
+        .andExpect(jsonPath("$['8'][0].id").value(1))
+        .andExpect(jsonPath("$['8'][0].title").value("맛집 소개 1"))
+        .andExpect(jsonPath("$['8'][1].id").value(2))
+        .andExpect(jsonPath("$['9'].length()").value(1))
+        .andExpect(jsonPath("$['9'][0].title").value("맛집 소개 3"));
+
+
+    verify(postService).getPostsByMonth(year, month, mockUser);
+  }
+
+  @Test
+  @DisplayName("게시글이 없을 경우 빈 맵을 반환한다")
+  void getPostsByMonth_emptyResult() throws Exception {
+    // given
+    User mockUser = setupAuthenticatedUser();
+    int year = 2025;
+    int month = 1;
+
+    when(postService.getPostsByMonth(year, month, mockUser)).thenReturn(Collections.emptyMap());
+
+    // when & then
+    mockMvc.perform(get("/posts")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer validToken")
+            .param("year", String.valueOf(year))
+            .param("month", String.valueOf(month))
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(0))  // 빈 결과 확인
+        .andDo(print());
+
+    verify(postService).getPostsByMonth(year, month, mockUser);
+  }
+
   private MarkersResponseDto createMarker(Long id, double latitude, double longitude, MarkerColor color, int score) {
     return MarkersResponseDto.builder()
         .id(id)
@@ -295,6 +359,22 @@ class PostControllerTest extends ControllerTestSupport {
         .title(title)
         .description("맛집 설명입니다.")
         .date(LocalDateTime.of(2025, 2, 8, 12, 0, 0))
+        .score(9)
+        .createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now())
+        .build();
+  }
+
+  private PostResponseDto createPostResponseDto(Long id, String title, LocalDateTime date) {
+    return PostResponseDto.builder()
+        .id(id)
+        .latitude(BigDecimal.valueOf(37.5665))
+        .longitude(BigDecimal.valueOf(126.9780))
+        .color(MarkerColor.RED)
+        .address("서울특별시 종로구")
+        .title(title)
+        .description("맛집 설명입니다.")
+        .date(date)
         .score(9)
         .createdAt(LocalDateTime.now())
         .updatedAt(LocalDateTime.now())

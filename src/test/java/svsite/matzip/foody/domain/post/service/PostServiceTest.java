@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -301,6 +302,62 @@ class PostServiceTest {
     verify(postRepository).findByPostIdAndUser(1L, mockUser);
   }
 
+  @Test
+  @DisplayName("특정 년도와 월에 해당하는 게시글 목록을 조회한다")
+  void getPostsByMonth_success() {
+    // given
+    User mockUser = User.builder().email("test@example.com").build();
+    int year = 2025;
+    int month = 2;
+
+    List<Post> posts = List.of(
+        createMockPost(1L, "맛집 소개 1", "맛있는 집입니다 1", LocalDateTime.of(2025, 2, 8, 12, 0, 0)),
+        createMockPost(2L, "맛집 소개 2", "맛있는 집입니다 2", LocalDateTime.of(2025, 2, 9, 14, 30, 0)),
+        createMockPost(3L, "맛집 소개 3", "맛있는 집입니다 3", LocalDateTime.of(2025, 2, 8, 18, 0, 0))
+    );
+
+    when(postRepository.findPostsByMonth(year, month, mockUser)).thenReturn(posts);
+
+    // when
+    Map<Integer, List<PostResponseDto>> result = postService.getPostsByMonth(year, month, mockUser);
+
+    // then
+    assertNotNull(result, "결과는 null이 아니어야 합니다.");
+    assertEquals(2, result.size(), "두 개의 날짜 그룹이 있어야 합니다.");
+    assertTrue(result.containsKey(8), "8일 날짜 그룹이 존재해야 합니다.");
+    assertTrue(result.containsKey(9), "9일 날짜 그룹이 존재해야 합니다.");
+
+    List<PostResponseDto> day8Posts = result.get(8);
+    assertEquals(2, day8Posts.size(), "8일 날짜 그룹에 두 개의 게시글이 있어야 합니다.");
+    assertEquals("맛집 소개 1", day8Posts.get(0).title(), "첫 번째 게시글 제목이 예상과 일치해야 합니다.");
+    assertEquals("맛집 소개 3", day8Posts.get(1).title(), "두 번째 게시글 제목이 예상과 일치해야 합니다.");
+
+    List<PostResponseDto> day9Posts = result.get(9);
+    assertEquals(1, day9Posts.size(), "9일 날짜 그룹에 하나의 게시글이 있어야 합니다.");
+    assertEquals("맛집 소개 2", day9Posts.getFirst().title(), "9일 날짜 그룹의 게시글 제목이 예상과 일치해야 합니다.");
+
+    verify(postRepository).findPostsByMonth(year, month, mockUser);
+  }
+
+  @Test
+  @DisplayName("특정 년도와 월에 게시글이 없을 경우 빈 맵을 반환한다")
+  void getPostsByMonth_emptyResult() {
+    // given
+    User mockUser = User.builder().email("empty@example.com").build();
+    int year = 2025;
+    int month = 1;
+
+    when(postRepository.findPostsByMonth(year, month, mockUser)).thenReturn(Collections.emptyList());
+
+    // when
+    Map<Integer, List<PostResponseDto>> result = postService.getPostsByMonth(year, month, mockUser);
+
+    // then
+    assertNotNull(result, "결과는 null이 아니어야 합니다.");
+    assertTrue(result.isEmpty(), "결과는 빈 맵이어야 합니다.");
+    verify(postRepository).findPostsByMonth(year, month, mockUser);
+  }
+
   private Post createMockPost(Long id, String title, String description) {
     return Post.builder()
         .id(id)
@@ -311,6 +368,21 @@ class PostServiceTest {
         .title(title)
         .description(description)
         .date(LocalDateTime.now())
+        .score(9)
+        .user(User.builder().email("test@example.com").build())
+        .build();
+  }
+
+  private Post createMockPost(Long id, String title, String description, LocalDateTime date) {
+    return Post.builder()
+        .id(id)
+        .latitude(BigDecimal.valueOf(37.5665))
+        .longitude(BigDecimal.valueOf(126.9780))
+        .color(MarkerColor.RED)
+        .address("서울특별시 종로구")
+        .title(title)
+        .description(description)
+        .date(date)
         .score(9)
         .user(User.builder().email("test@example.com").build())
         .build();
