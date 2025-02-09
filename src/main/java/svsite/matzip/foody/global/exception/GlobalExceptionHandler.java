@@ -97,7 +97,7 @@ public final class GlobalExceptionHandler {
       FileUploadException exception, HttpServletRequest request) {
 
     return handleException(
-        "FILE_UPLOAD_ERROR", exception.getStatus(), exception.getMessage(), request, true
+        "FILE_UPLOAD_ERROR", exception.getErrorCode().defaultHttpStatus(), exception.getMessage(), request, true
     );
   }
 

@@ -1,16 +1,27 @@
 package svsite.matzip.foody.global.util.file.exception;
 
-import org.springframework.http.HttpStatus;
+import svsite.matzip.foody.global.exception.support.CustomException;
+import svsite.matzip.foody.global.exception.support.ErrorCode;
 
-public class FileUploadException extends RuntimeException {
-  private final HttpStatus status;
+public class FileUploadException extends CustomException {
 
-  public FileUploadException(String message, HttpStatus status) {
-    super(message);
-    this.status = status;
+  public FileUploadException() {
   }
 
-  public HttpStatus getStatus() {
-    return status;
+  public FileUploadException(String message) {
+    super(message);
+  }
+
+  public FileUploadException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
+  public FileUploadException(ErrorCode errorCode) {
+    super(errorCode);
+  }
+
+  public FileUploadException(ErrorCode errorCode,
+      Throwable cause) {
+    super(errorCode, cause);
   }
 }

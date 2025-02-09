@@ -1,9 +1,5 @@
 package svsite.matzip.foody.global.util.file.service;
 
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.PAYLOAD_TOO_LARGE;
-import static org.springframework.http.HttpStatus.UNSUPPORTED_MEDIA_TYPE;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -31,18 +27,17 @@ public class FileUploadService {
   private void validateFileCount(int size) {
     if (size > imageConfig.getMaxImageCount()) {
       throw new FileUploadException(
-          "최대 " + imageConfig.getMaxImageCount() + "개의 파일만 업로드할 수 있습니다.", BAD_REQUEST
-      );
+          "최대 " + imageConfig.getMaxImageCount() + "개의 파일만 업로드할 수 있습니다.");
     }
   }
 
   private String validateAndSaveFile(MultipartFile file) {
     if (!Objects.requireNonNull(file.getContentType()).startsWith("image/")) {
-      throw new FileUploadException("허용되지 않은 파일 형식입니다.", UNSUPPORTED_MEDIA_TYPE);
+      throw new FileUploadException("허용되지 않은 파일 형식입니다.");
     }
 
     if (file.getSize() > imageConfig.getMaxImageSize()) {
-      throw new FileUploadException("파일 크기가 초과되었습니다. 최대 " + imageConfig.getMaxImageSize() + " bytes까지 허용됩니다.", PAYLOAD_TOO_LARGE);
+      throw new FileUploadException("파일 크기가 초과되었습니다. 최대 " + imageConfig.getMaxImageSize() + " bytes까지 허용됩니다.");
     }
 
     String fileName = fileStorageService.saveFile(file);
