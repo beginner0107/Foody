@@ -15,6 +15,8 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import svsite.matzip.foody.global.exception.response.ApiResponseError;
 import svsite.matzip.foody.global.exception.support.CustomException;
+import svsite.matzip.foody.global.util.file.exception.FileStorageException;
+import svsite.matzip.foody.global.util.file.exception.FileUploadException;
 
 @Slf4j
 @RestControllerAdvice
@@ -87,6 +89,26 @@ public final class GlobalExceptionHandler {
     String message = String.format("파라미터 '%s'의 값 '%s'가 올바르지 않습니다.", exception.getName(),
         exception.getValue());
     return handleException("TYPE_MISMATCH", HttpStatus.BAD_REQUEST, message, request, false);
+  }
+
+  // 파일 업로드 커스텀 예외 처리
+  @ExceptionHandler(FileUploadException.class)
+  public ResponseEntity<ApiResponseError> handleFileUploadException(
+      FileUploadException exception, HttpServletRequest request) {
+
+    return handleException(
+        "FILE_UPLOAD_ERROR", exception.getErrorCode().defaultHttpStatus(), exception.getMessage(), request, true
+    );
+  }
+
+  // 파일 저장 예외 처리 (I/O 오류 등)
+  @ExceptionHandler(FileStorageException.class)
+  public ResponseEntity<ApiResponseError> handleFileStorageException(
+      FileStorageException exception, HttpServletRequest request) {
+
+    return handleException(
+        "FILE_STORAGE_ERROR", HttpStatus.INTERNAL_SERVER_ERROR, "파일 저장 중 오류가 발생했습니다.", request, true
+    );
   }
 
   // 공통 예외 처리 메서드

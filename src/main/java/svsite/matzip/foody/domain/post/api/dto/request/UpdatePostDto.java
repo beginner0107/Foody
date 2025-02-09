@@ -9,6 +9,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
+import java.util.List;
 import svsite.matzip.foody.domain.post.entity.MarkerColor;
 
 @Schema(description = "맛집 글 수정 요청 DTO")
@@ -34,5 +35,8 @@ public record UpdatePostDto(
     @Schema(description = "맛집 점수 (0 ~ 10)", example = "9")
     @Min(value = 0, message = "점수는 최소 0이어야 합니다.")
     @Max(value = 10, message = "점수는 최대 10이어야 합니다.")
-    Integer score
+    Integer score,
+
+    @Schema(description = "게시글에 첨부된 이미지 uri")
+    List<String> imageUris
 ) {}

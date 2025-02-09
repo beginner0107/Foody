@@ -1,4 +1,4 @@
-package svsite.matzip.foody.domain.image.api;
+package svsite.matzip.foody.domain.image.entity;
 
 import static jakarta.persistence.FetchType.LAZY;
 
@@ -33,6 +33,23 @@ public class Image extends BaseEntity {
   @ManyToOne(fetch = LAZY)
   @JoinColumn(name="post_id")
   Post post;
+
+  public void associateWithPost(Post post) {
+    if (this.post != null) {
+      this.post.getImages().remove(this);
+    }
+    this.post = post;
+    if (post != null && !post.getImages().contains(this)) {
+      post.getImages().add(this);
+    }
+  }
+
+  public void dissociateFromPost() {
+    if (this.post != null) {
+      this.post.getImages().remove(this);
+      this.post = null;
+    }
+  }
 
   @Override
   public boolean equals(Object o) {

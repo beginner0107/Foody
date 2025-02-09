@@ -3,6 +3,9 @@ package svsite.matzip.foody.domain.post.api.dto.response;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
 import lombok.Builder;
 import svsite.matzip.foody.domain.post.entity.MarkerColor;
 import svsite.matzip.foody.domain.post.entity.Post;
@@ -30,7 +33,9 @@ public record PostResponseDto(
     @Schema(description = "생성 날짜 및 시간", example = "2025-02-08T12:00:00")
     LocalDateTime createdAt,
     @Schema(description = "수정 날짜 및 시간", example = "2025-02-08T13:00:00")
-    LocalDateTime updatedAt
+    LocalDateTime updatedAt,
+    @Schema(description = "게시글에 첨부된 이미지 목록")
+    List<ImageResponseDto> images
 ) {
 
   public static PostResponseDto from(Post post) {
@@ -44,6 +49,17 @@ public record PostResponseDto(
         .description(post.getDescription())
         .date(post.getDate())
         .score(post.getScore())
+        .images(post.getImages().stream()
+            .sorted(Comparator.comparingLong(
+                image -> Optional.ofNullable(image.getId()).orElse(0L)))
+            .map(image -> ImageResponseDto.builder()
+                .id(image.getId())
+                .uri(image.getUri())
+                .createdAt(image.getCreatedAt())
+                .updatedAt(image.getUpdatedAt())
+                .deletedAt(image.getDeletedAt())
+                .build())
+            .toList())
         .createdAt(post.getCreatedAt())
         .updatedAt(post.getUpdatedAt())
         .build();

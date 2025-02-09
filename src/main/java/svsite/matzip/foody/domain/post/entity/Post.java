@@ -18,8 +18,10 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,7 +29,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import svsite.matzip.foody.domain.auth.entity.User;
 import svsite.matzip.foody.domain.favorite.entity.Favorite;
-import svsite.matzip.foody.domain.image.api.Image;
+import svsite.matzip.foody.domain.image.entity.Image;
 import svsite.matzip.foody.domain.post.api.dto.request.CreatePostDto;
 import svsite.matzip.foody.domain.post.api.dto.request.UpdatePostDto;
 import svsite.matzip.foody.global.entity.BaseEntity;
@@ -76,7 +78,7 @@ public class Post extends BaseEntity {
   private List<Favorite> favorites;
 
   public static Post create(CreatePostDto postDto, User user) {
-    return Post.builder()
+    Post post = Post.builder()
         .latitude(postDto.latitude())
         .longitude(postDto.longitude())
         .color(postDto.color())
@@ -87,6 +89,14 @@ public class Post extends BaseEntity {
         .score(postDto.score())
         .user(user)
         .build();
+
+    List<Image> images = postDto.imageUris()
+        .stream()
+        .map(uri -> Image.builder().uri(uri).build())
+        .toList();
+
+    post.addImages(images);
+    return post;
   }
 
   public void update(UpdatePostDto postDto) {
@@ -95,6 +105,40 @@ public class Post extends BaseEntity {
     this.color = postDto.color();
     this.date = postDto.date();
     this.score = postDto.score();
+  }
+
+  public void updateImages(List<Image> updatedImages) {
+    List<Image> imagesToAdd = findImagesToAdd(updatedImages);
+    List<Image> imagesToRemove = findImagesToRemove(updatedImages);
+
+    imagesToRemove.forEach(this::removeImage);
+    imagesToAdd.forEach(this::addImage);
+  }
+
+  private List<Image> findImagesToAdd(List<Image> updatedImages) {
+    return updatedImages.stream()
+        .filter(newImage -> images.stream().noneMatch(existing -> existing.getUri().equals(newImage.getUri())))
+        .toList();
+  }
+
+  private List<Image> findImagesToRemove(List<Image> updatedImages) {
+    return images.stream()
+        .filter(existing -> updatedImages.stream().noneMatch(newImage -> newImage.getUri().equals(existing.getUri())))
+        .toList();
+  }
+
+  public void addImages(List<Image> images) {
+    images.forEach(this::addImage);
+  }
+
+  public void addImage(Image image) {
+    image.associateWithPost(this);
+    this.images.add(image);
+  }
+
+  public void removeImage(Image image) {
+    image.dissociateFromPost();
+    images.remove(image);
   }
 
   @Override
