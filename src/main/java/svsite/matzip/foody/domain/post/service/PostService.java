@@ -9,10 +9,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import svsite.matzip.foody.domain.auth.entity.User;
+import svsite.matzip.foody.domain.image.entity.Image;
 import svsite.matzip.foody.domain.post.api.dto.request.CreatePostDto;
 import svsite.matzip.foody.domain.post.api.dto.request.UpdatePostDto;
 import svsite.matzip.foody.domain.post.api.dto.response.MarkersResponseDto;
@@ -45,7 +45,12 @@ public class PostService {
   public PostResponseDto updatePost(long id, UpdatePostDto updatePostDto, User user) {
     Post post = postRepository.findByPostIdAndUser(id, user)
         .orElseThrow(() -> new CustomException(POST_NOT_FOUND));
+
     post.update(updatePostDto);
+    post.updateImages(updatePostDto.imageUris().stream()
+        .map(uri -> Image.builder().uri(uri).build())
+        .toList());
+
     return PostResponseDto.from(post);
   }
 
@@ -81,7 +86,8 @@ public class PostService {
   }
 
   @Transactional(readOnly = true)
-  public Page<PostResponseDto> searchMyPostsByTitleAndAddress(Pageable pageable, String query, User user) {
+  public Page<PostResponseDto> searchMyPostsByTitleAndAddress(Pageable pageable, String query,
+      User user) {
     Page<Post> posts = postRepository.searchByTitleOrAddress(query, user, pageable);
     return posts.map(PostResponseDto::from);
   }
