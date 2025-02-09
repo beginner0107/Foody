@@ -151,6 +151,7 @@ class PostServiceTest {
     );
 
     when(postRepository.findByPostIdAndUser(1L, mockUser)).thenReturn(Optional.of(existingPost));
+    when(postRepository.save(any(Post.class))).thenAnswer(invocation -> invocation.getArgument(0));  // Mock 설정 추가
 
     // when
     PostResponseDto responseDto = postService.updatePost(1L, updatePostDto, mockUser);
@@ -164,6 +165,7 @@ class PostServiceTest {
     assertEquals(updatePostDto.date(), responseDto.date(), "날짜가 예상 값과 일치해야 합니다.");
 
     verify(postRepository).findByPostIdAndUser(1L, mockUser);
+    verify(postRepository).save(any(Post.class));
   }
 
   @Test
