@@ -25,6 +25,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 import svsite.matzip.foody.domain.auth.api.dto.request.AuthRequestDto;
 import svsite.matzip.foody.domain.auth.api.dto.request.EditProfileDto;
+import svsite.matzip.foody.domain.auth.api.dto.request.UpdateCategoryDto;
 import svsite.matzip.foody.domain.auth.api.dto.response.ProfileResponseDto;
 import svsite.matzip.foody.domain.auth.api.dto.response.TokenResponseDto;
 import svsite.matzip.foody.domain.auth.entity.LoginType;
@@ -287,5 +288,27 @@ class AuthServiceTest {
     // then
     assertEquals(999L, deletedUserId, "삭제된 사용자 ID가 예상 값과 일치해야 합니다.");
     verify(userRepository, times(1)).delete(mockUser);
+  }
+
+  @Test
+  @DisplayName("카테고리 수정 시 성공적으로 수정된 프로필 정보를 반환한다.")
+  void updateCategory_success() {
+    // given
+    User mockUser = User.builder()
+        .id(1L)
+        .nickname("테스터")
+        .RED("기존 한식")
+        .YELLOW("기존 중식")
+        .build();
+
+    UpdateCategoryDto updateCategoryDto = new UpdateCategoryDto("한식", "양식", "채식", "중식", "디저트");
+
+    // when
+    ProfileResponseDto responseDto = authService.updateCategory(updateCategoryDto, mockUser);
+
+    // then
+    assertNotNull(responseDto);
+    assertEquals("한식", responseDto.RED(), "RED 카테고리가 변경되었는지 확인");
+    assertEquals("중식", responseDto.YELLOW(), "YELLOW 카테고리가 변경되었는지 확인");
   }
 }

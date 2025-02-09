@@ -26,6 +26,7 @@ import org.springframework.http.MediaType;
 import svsite.matzip.foody.domain.auth.ControllerTestSupport;
 import svsite.matzip.foody.domain.auth.api.dto.request.AuthRequestDto;
 import svsite.matzip.foody.domain.auth.api.dto.request.EditProfileDto;
+import svsite.matzip.foody.domain.auth.api.dto.request.UpdateCategoryDto;
 import svsite.matzip.foody.domain.auth.api.dto.response.ProfileResponseDto;
 import svsite.matzip.foody.domain.auth.api.dto.response.TokenResponseDto;
 import svsite.matzip.foody.domain.auth.entity.LoginType;
@@ -261,5 +262,42 @@ class AuthControllerTest extends ControllerTestSupport {
 
     // 서비스 메서드 호출 검증
     verify(authService, times(1)).deleteAccount(mockUser);
+  }
+
+  @Test
+  @DisplayName("카테고리 수정 시 200 OK와 수정된 프로필 정보를 반환한다.")
+  void updateCategory_success() throws Exception {
+    // given
+    User mockUser = User.builder()
+        .id(1L)
+        .email("test@example.com")
+        .nickname("테스터")
+        .build();
+    UpdateCategoryDto updateCategoryDto = new UpdateCategoryDto("한식", "양식", "채식", "중식", "디저트");
+
+    ProfileResponseDto responseDto = ProfileResponseDto.builder()
+        .id(mockUser.getId())
+        .nickname(mockUser.getNickname())
+        .RED(updateCategoryDto.red())
+        .BLUE(updateCategoryDto.blue())
+        .GREEN(updateCategoryDto.green())
+        .YELLOW(updateCategoryDto.yellow())
+        .PURPLE(updateCategoryDto.purple())
+        .build();
+
+    when(authService.updateCategory(any(UpdateCategoryDto.class), any(User.class))).thenReturn(responseDto);
+
+    // when & then
+    mockMvc.perform(patch("/auth/category")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer validAccessToken")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(updateCategoryDto)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(mockUser.getId()))
+        .andExpect(jsonPath("$.RED").value("한식"))
+        .andExpect(jsonPath("$.BLUE").value("양식"))
+        .andExpect(jsonPath("$.GREEN").value("채식"))
+        .andExpect(jsonPath("$.YELLOW").value("중식"))
+        .andExpect(jsonPath("$.PURPLE").value("디저트"));
   }
 }
