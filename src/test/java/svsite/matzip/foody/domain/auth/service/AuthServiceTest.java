@@ -252,4 +252,40 @@ class AuthServiceTest {
 
     verify(userRepository, never()).save(any(User.class));
   }
+
+  @Test
+  @DisplayName("계정 삭제 시 성공적으로 삭제된 사용자 ID를 반환한다.")
+  void deleteAccount_success() {
+    // given
+    User mockUser = User.builder()
+        .id(1L)
+        .email("test@example.com")
+        .nickname("테스터")
+        .build();
+
+    // when
+    long deletedUserId = authService.deleteAccount(mockUser);
+
+    // then
+    assertEquals(1L, deletedUserId, "삭제된 사용자 ID가 예상 값과 일치해야 합니다.");
+    verify(userRepository, times(1)).delete(mockUser);
+  }
+
+  @Test
+  @DisplayName("존재하지 않는 사용자로 계정 삭제 시 예외가 발생하지 않고 처리된다.")
+  void deleteAccount_nonExistentUser() {
+    // given
+    User mockUser = User.builder()
+        .id(999L)
+        .email("nonexistent@example.com")
+        .nickname("없는 유저")
+        .build();
+
+    // when
+    long deletedUserId = authService.deleteAccount(mockUser);
+
+    // then
+    assertEquals(999L, deletedUserId, "삭제된 사용자 ID가 예상 값과 일치해야 합니다.");
+    verify(userRepository, times(1)).delete(mockUser);
+  }
 }

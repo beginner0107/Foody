@@ -5,8 +5,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -230,5 +233,33 @@ class AuthControllerTest extends ControllerTestSupport {
         .andExpect(jsonPath("$.loginType").value("KAKAO"));
 
     verify(authService).editProfile(any(EditProfileDto.class), eq(mockUser));
+  }
+
+  @Test
+  @DisplayName("계정 삭제 성공 시 204 No Content와 삭제된 사용자 ID를 반환한다.")
+  void deleteAccount_success() throws Exception {
+    // given
+    User mockUser = User.builder()
+        .id(1L)
+        .email("test@example.com")
+        .nickname("테스터")
+        .build();
+
+    // 인증된 사용자 주입 설정
+    when(authenticatedUserResolver.supportsParameter(any())).thenReturn(true);
+    when(authenticatedUserResolver.resolveArgument(any(), any(), any(), any())).thenReturn(mockUser);
+
+    // 서비스 동작 모의(Mock)
+    when(authService.deleteAccount(any(User.class))).thenReturn(mockUser.getId());
+
+    // when & then
+    mockMvc.perform(delete("/auth/me")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer validAccessToken")
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isNoContent())
+        .andExpect(jsonPath("$").value(1L)); // 응답이 사용자 ID인지 검증
+
+    // 서비스 메서드 호출 검증
+    verify(authService, times(1)).deleteAccount(mockUser);
   }
 }
