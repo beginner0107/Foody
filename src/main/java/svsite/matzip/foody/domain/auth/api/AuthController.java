@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import svsite.matzip.foody.domain.auth.api.dto.request.AuthRequestDto;
+import svsite.matzip.foody.domain.auth.api.dto.request.EditProfileDto;
 import svsite.matzip.foody.domain.auth.api.dto.response.ProfileResponseDto;
 import svsite.matzip.foody.domain.auth.api.dto.response.TokenResponseDto;
 import svsite.matzip.foody.domain.auth.entity.User;
@@ -85,5 +86,23 @@ public class AuthController {
   @GetMapping("/me")
   public ResponseEntity<ProfileResponseDto> getProfile(@AuthenticatedUser User user) {
     return ResponseEntity.ok(authService.getProfile(user));
+  }
+
+  @Operation(
+      summary = "프로필 수정",
+      description = "사용자의 프로필 정보를 수정합니다.",
+      security = @SecurityRequirement(name = "bearerAuth")
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "프로필 수정 성공"),
+      @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+      @ApiResponse(responseCode = "401", description = "인증 실패")
+  })
+  @PatchMapping("/me")
+  public ResponseEntity<ProfileResponseDto> editProfile(
+      @AuthenticatedUser User user,
+      @RequestBody @Valid EditProfileDto editProfileDto
+  ) {
+    return ResponseEntity.ok(authService.editProfile(editProfileDto, user));
   }
 }

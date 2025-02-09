@@ -20,6 +20,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import svsite.matzip.foody.domain.auth.api.dto.request.AuthRequestDto;
+import svsite.matzip.foody.domain.auth.api.dto.request.EditProfileDto;
 import svsite.matzip.foody.domain.favorite.entity.Favorite;
 import svsite.matzip.foody.global.entity.BaseEntity;
 
@@ -97,5 +98,10 @@ public class User extends BaseEntity {
 
   public void updateHashedRefreshToken(String hashedRefreshToken) {
     this.hashedRefreshToken = hashedRefreshToken;
+  }
+
+  public void editProfile(EditProfileDto profileDto) {
+    this.nickname = profileDto.nickname();
+    this.imageUri = profileDto.imageUri();
   }
 }
