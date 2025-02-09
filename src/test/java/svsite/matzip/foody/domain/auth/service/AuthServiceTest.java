@@ -23,7 +23,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 import svsite.matzip.foody.domain.auth.api.dto.request.AuthRequestDto;
+import svsite.matzip.foody.domain.auth.api.dto.response.ProfileResponseDto;
 import svsite.matzip.foody.domain.auth.api.dto.response.TokenResponseDto;
+import svsite.matzip.foody.domain.auth.entity.LoginType;
 import svsite.matzip.foody.domain.auth.entity.User;
 import svsite.matzip.foody.domain.auth.repository.UserRepository;
 import svsite.matzip.foody.global.exception.errorCode.ErrorCodes;
@@ -182,5 +184,41 @@ class AuthServiceTest {
     verify(jwtUtil).generateAccessToken(payload);
     verify(jwtUtil).generateRefreshToken(payload);
     verify(passwordEncoder).encode(newRefreshToken);
+  }
+
+  @Test
+  @DisplayName("프로필 조회 성공 시 모든 사용자 정보를 반환한다.")
+  void getProfile_success() {
+    // given
+    User mockUser = User.builder()
+        .id(1L)
+        .loginType(LoginType.KAKAO)
+        .email("test@example.com")
+        .nickname("테스터")
+        .imageUri("https://example.com/image.jpg")
+        .kakaoImageUri("https://kakao.com/profile.jpg")
+        .YELLOW("맛있는 중국집")
+        .GREEN("맛있는 수제 햄버거")
+        .BLUE("맛있는 해물라면")
+        .RED("정말 1티어 맛집")
+        .PURPLE("부모님이 좋아하시는 한식")
+        .build();
+
+    // when
+    ProfileResponseDto responseDto = authService.getProfile(mockUser);
+
+    // then
+    assertNotNull(responseDto, "프로필 응답은 null이 아니어야 합니다.");
+    assertEquals(1L, responseDto.id(), "ID가 예상 값과 일치해야 합니다.");
+    assertEquals(LoginType.KAKAO, responseDto.loginType(), "로그인 유형이 예상 값과 일치해야 합니다.");
+    assertEquals("test@example.com", responseDto.email(), "이메일이 예상 값과 일치해야 합니다.");
+    assertEquals("테스터", responseDto.nickname(), "닉네임이 예상 값과 일치해야 합니다.");
+    assertEquals("https://example.com/image.jpg", responseDto.imageUri(), "프로필 이미지 URI가 예상 값과 일치해야 합니다.");
+    assertEquals("https://kakao.com/profile.jpg", responseDto.kakaoImageUri(), "카카오 프로필 이미지 URI가 예상 값과 일치해야 합니다.");
+    assertEquals("맛있는 중국집", responseDto.YELLOW(), "YELLOW 카테고리가 예상 값과 일치해야 합니다.");
+    assertEquals("맛있는 수제 햄버거", responseDto.GREEN(), "GREEN 카테고리가 예상 값과 일치해야 합니다.");
+    assertEquals("맛있는 해물라면", responseDto.BLUE(), "BLUE 카테고리가 예상 값과 일치해야 합니다.");
+    assertEquals("정말 1티어 맛집", responseDto.RED(), "RED 카테고리가 예상 값과 일치해야 합니다.");
+    assertEquals("부모님이 좋아하시는 한식", responseDto.PURPLE(), "PURPLE 카테고리가 예상 값과 일치해야 합니다.");
   }
 }

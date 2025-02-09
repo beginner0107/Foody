@@ -11,13 +11,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import svsite.matzip.foody.domain.auth.ControllerTestSupport;
 import svsite.matzip.foody.domain.auth.api.dto.request.AuthRequestDto;
+import svsite.matzip.foody.domain.auth.api.dto.response.ProfileResponseDto;
 import svsite.matzip.foody.domain.auth.api.dto.response.TokenResponseDto;
+import svsite.matzip.foody.domain.auth.entity.LoginType;
 import svsite.matzip.foody.domain.auth.entity.User;
 import svsite.matzip.foody.global.exception.errorCode.ErrorCodes;
 import svsite.matzip.foody.global.exception.support.CustomException;
@@ -139,5 +142,43 @@ class AuthControllerTest extends ControllerTestSupport {
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.accessToken", is("newAccessToken")))
         .andExpect(jsonPath("$.refreshToken", is("newRefreshToken")));
+  }
+
+  @Test
+  @DisplayName("프로필 조회 성공 시 200 OK와 프로필 정보를 반환한다.")
+  void getProfile_success() throws Exception {
+    // given
+    User mockUser = User.builder()
+        .id(1L)
+        .email("test@example.com")
+        .nickname("테스터")
+        .loginType(LoginType.KAKAO)
+        .imageUri("https://example.com/profile.jpg")
+        .build();
+
+    ProfileResponseDto responseDto = ProfileResponseDto.builder()
+        .id(mockUser.getId())
+        .email(mockUser.getEmail())
+        .nickname(mockUser.getNickname())
+        .loginType(mockUser.getLoginType())
+        .imageUri(mockUser.getImageUri())
+        .createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now())
+        .build();
+
+    when(authenticatedUserResolver.supportsParameter(any())).thenReturn(true);
+    when(authenticatedUserResolver.resolveArgument(any(), any(), any(), any())).thenReturn(mockUser);
+    when(authService.getProfile(any(User.class))).thenReturn(responseDto);
+
+    // when & then
+    mockMvc.perform(get("/auth/me")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer validAccessToken")
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(1L))
+        .andExpect(jsonPath("$.email").value("test@example.com"))
+        .andExpect(jsonPath("$.nickname").value("테스터"))
+        .andExpect(jsonPath("$.loginType").value("KAKAO"))
+        .andExpect(jsonPath("$.imageUri").value("https://example.com/profile.jpg"));
   }
 }
