@@ -1,6 +1,7 @@
 package svsite.matzip.foody.domain.auth.api;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -9,12 +10,17 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import svsite.matzip.foody.domain.auth.api.dto.request.AuthRequestDto;
+import svsite.matzip.foody.domain.auth.api.dto.request.EditProfileDto;
+import svsite.matzip.foody.domain.auth.api.dto.request.UpdateCategoryDto;
+import svsite.matzip.foody.domain.auth.api.dto.response.ProfileResponseDto;
 import svsite.matzip.foody.domain.auth.api.dto.response.TokenResponseDto;
 import svsite.matzip.foody.domain.auth.entity.User;
 import svsite.matzip.foody.domain.auth.service.AuthService;
@@ -68,5 +74,72 @@ public class AuthController {
   @GetMapping("/logout")
   public ResponseEntity<Long> logout(@AuthenticatedUser User user) {
     return ResponseEntity.status(HttpStatus.OK).body(authService.deleteRefreshToken(user));
+  }
+
+  @Operation(
+      summary = "내 프로필 조회",
+      description = "로그인한 사용자의 프로필 정보를 조회합니다.",
+      security = @SecurityRequirement(name = "bearerAuth")
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "프로필 조회 성공"),
+      @ApiResponse(responseCode = "401", description = "인증 실패")
+  })
+  @GetMapping("/me")
+  public ResponseEntity<ProfileResponseDto> getProfile(@AuthenticatedUser User user) {
+    return ResponseEntity.ok(authService.getProfile(user));
+  }
+
+  @Operation(
+      summary = "프로필 수정",
+      description = "사용자의 프로필 정보를 수정합니다.",
+      security = @SecurityRequirement(name = "bearerAuth")
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "프로필 수정 성공"),
+      @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+      @ApiResponse(responseCode = "401", description = "인증 실패")
+  })
+  @PatchMapping("/me")
+  public ResponseEntity<ProfileResponseDto> editProfile(
+      @AuthenticatedUser User user,
+      @RequestBody @Valid EditProfileDto editProfileDto
+  ) {
+    return ResponseEntity.ok(authService.editProfile(editProfileDto, user));
+  }
+
+  @Operation(
+      summary = "계정 삭제",
+      description = "로그인한 사용자의 계정을 삭제합니다.",
+      security = @SecurityRequirement(name = "bearerAuth")
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "204", description = "계정 삭제 성공"),
+      @ApiResponse(responseCode = "401", description = "인증 실패")
+  })
+  @DeleteMapping("/me")
+  public ResponseEntity<Long> deleteAccount(@AuthenticatedUser User user) {
+    return ResponseEntity.status(HttpStatus.NO_CONTENT).body(authService.deleteAccount(user));
+  }
+
+  @Operation(
+      summary = "카테고리 수정",
+      description = "사용자가 자신의 카테고리 정보를 수정합니다.",
+      security = @SecurityRequirement(name = "bearerAuth")
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "카테고리 수정 성공"),
+      @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+      @ApiResponse(responseCode = "401", description = "인증 실패")
+  })
+  @PatchMapping("/category")
+  public ResponseEntity<ProfileResponseDto> updateCategory(
+      @Parameter(description = "현재 인증된 사용자 정보", hidden = true)
+      @AuthenticatedUser User user,
+
+      @Parameter(description = "수정할 카테고리 정보", required = true)
+      @RequestBody UpdateCategoryDto categories
+  ) {
+    return ResponseEntity.ok().body(authService.updateCategory(categories, user));
   }
 }

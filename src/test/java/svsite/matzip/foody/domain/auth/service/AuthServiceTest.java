@@ -8,6 +8,7 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -23,7 +24,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 import svsite.matzip.foody.domain.auth.api.dto.request.AuthRequestDto;
+import svsite.matzip.foody.domain.auth.api.dto.request.EditProfileDto;
+import svsite.matzip.foody.domain.auth.api.dto.request.UpdateCategoryDto;
+import svsite.matzip.foody.domain.auth.api.dto.response.ProfileResponseDto;
 import svsite.matzip.foody.domain.auth.api.dto.response.TokenResponseDto;
+import svsite.matzip.foody.domain.auth.entity.LoginType;
 import svsite.matzip.foody.domain.auth.entity.User;
 import svsite.matzip.foody.domain.auth.repository.UserRepository;
 import svsite.matzip.foody.global.exception.errorCode.ErrorCodes;
@@ -182,5 +187,128 @@ class AuthServiceTest {
     verify(jwtUtil).generateAccessToken(payload);
     verify(jwtUtil).generateRefreshToken(payload);
     verify(passwordEncoder).encode(newRefreshToken);
+  }
+
+  @Test
+  @DisplayName("프로필 조회 성공 시 모든 사용자 정보를 반환한다.")
+  void getProfile_success() {
+    // given
+    User mockUser = User.builder()
+        .id(1L)
+        .loginType(LoginType.KAKAO)
+        .email("test@example.com")
+        .nickname("테스터")
+        .imageUri("https://example.com/image.jpg")
+        .kakaoImageUri("https://kakao.com/profile.jpg")
+        .YELLOW("맛있는 중국집")
+        .GREEN("맛있는 수제 햄버거")
+        .BLUE("맛있는 해물라면")
+        .RED("정말 1티어 맛집")
+        .PURPLE("부모님이 좋아하시는 한식")
+        .build();
+
+    // when
+    ProfileResponseDto responseDto = authService.getProfile(mockUser);
+
+    // then
+    assertNotNull(responseDto, "프로필 응답은 null이 아니어야 합니다.");
+    assertEquals(1L, responseDto.id(), "ID가 예상 값과 일치해야 합니다.");
+    assertEquals(LoginType.KAKAO, responseDto.loginType(), "로그인 유형이 예상 값과 일치해야 합니다.");
+    assertEquals("test@example.com", responseDto.email(), "이메일이 예상 값과 일치해야 합니다.");
+    assertEquals("테스터", responseDto.nickname(), "닉네임이 예상 값과 일치해야 합니다.");
+    assertEquals("https://example.com/image.jpg", responseDto.imageUri(), "프로필 이미지 URI가 예상 값과 일치해야 합니다.");
+    assertEquals("https://kakao.com/profile.jpg", responseDto.kakaoImageUri(), "카카오 프로필 이미지 URI가 예상 값과 일치해야 합니다.");
+    assertEquals("맛있는 중국집", responseDto.YELLOW(), "YELLOW 카테고리가 예상 값과 일치해야 합니다.");
+    assertEquals("맛있는 수제 햄버거", responseDto.GREEN(), "GREEN 카테고리가 예상 값과 일치해야 합니다.");
+    assertEquals("맛있는 해물라면", responseDto.BLUE(), "BLUE 카테고리가 예상 값과 일치해야 합니다.");
+    assertEquals("정말 1티어 맛집", responseDto.RED(), "RED 카테고리가 예상 값과 일치해야 합니다.");
+    assertEquals("부모님이 좋아하시는 한식", responseDto.PURPLE(), "PURPLE 카테고리가 예상 값과 일치해야 합니다.");
+  }
+
+  @Test
+  @DisplayName("프로필 수정 시 성공적으로 수정된 프로필 정보를 반환한다.")
+  void editProfile_success() {
+    // given
+    User mockUser = User.builder()
+        .id(1L)
+        .email("test@example.com")
+        .nickname("기존 닉네임")
+        .imageUri("https://example.com/original-profile.jpg")
+        .loginType(LoginType.KAKAO)
+        .build();
+
+    EditProfileDto editProfileDto = new EditProfileDto(
+        "수정된 닉네임",
+        "https://example.com/new-profile.jpg"
+    );
+
+    // when
+    ProfileResponseDto responseDto = authService.editProfile(editProfileDto, mockUser);
+
+    // then
+    assertNotNull(responseDto, "응답은 null이 아니어야 합니다.");
+    assertEquals(mockUser.getId(), responseDto.id(), "ID가 예상 값과 일치해야 합니다.");
+    assertEquals(editProfileDto.nickname(), responseDto.nickname(), "닉네임이 예상 값과 일치해야 합니다.");
+    assertEquals(editProfileDto.imageUri(), responseDto.imageUri(), "이미지 URI가 예상 값과 일치해야 합니다.");
+
+    verify(userRepository, never()).save(any(User.class));
+  }
+
+  @Test
+  @DisplayName("계정 삭제 시 성공적으로 삭제된 사용자 ID를 반환한다.")
+  void deleteAccount_success() {
+    // given
+    User mockUser = User.builder()
+        .id(1L)
+        .email("test@example.com")
+        .nickname("테스터")
+        .build();
+
+    // when
+    long deletedUserId = authService.deleteAccount(mockUser);
+
+    // then
+    assertEquals(1L, deletedUserId, "삭제된 사용자 ID가 예상 값과 일치해야 합니다.");
+    verify(userRepository, times(1)).delete(mockUser);
+  }
+
+  @Test
+  @DisplayName("존재하지 않는 사용자로 계정 삭제 시 예외가 발생하지 않고 처리된다.")
+  void deleteAccount_nonExistentUser() {
+    // given
+    User mockUser = User.builder()
+        .id(999L)
+        .email("nonexistent@example.com")
+        .nickname("없는 유저")
+        .build();
+
+    // when
+    long deletedUserId = authService.deleteAccount(mockUser);
+
+    // then
+    assertEquals(999L, deletedUserId, "삭제된 사용자 ID가 예상 값과 일치해야 합니다.");
+    verify(userRepository, times(1)).delete(mockUser);
+  }
+
+  @Test
+  @DisplayName("카테고리 수정 시 성공적으로 수정된 프로필 정보를 반환한다.")
+  void updateCategory_success() {
+    // given
+    User mockUser = User.builder()
+        .id(1L)
+        .nickname("테스터")
+        .RED("기존 한식")
+        .YELLOW("기존 중식")
+        .build();
+
+    UpdateCategoryDto updateCategoryDto = new UpdateCategoryDto("한식", "양식", "채식", "중식", "디저트");
+
+    // when
+    ProfileResponseDto responseDto = authService.updateCategory(updateCategoryDto, mockUser);
+
+    // then
+    assertNotNull(responseDto);
+    assertEquals("한식", responseDto.RED(), "RED 카테고리가 변경되었는지 확인");
+    assertEquals("중식", responseDto.YELLOW(), "YELLOW 카테고리가 변경되었는지 확인");
   }
 }

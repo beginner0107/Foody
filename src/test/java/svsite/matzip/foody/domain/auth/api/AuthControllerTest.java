@@ -2,22 +2,34 @@ package svsite.matzip.foody.domain.auth.api;
 
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import svsite.matzip.foody.domain.auth.ControllerTestSupport;
 import svsite.matzip.foody.domain.auth.api.dto.request.AuthRequestDto;
+import svsite.matzip.foody.domain.auth.api.dto.request.EditProfileDto;
+import svsite.matzip.foody.domain.auth.api.dto.request.UpdateCategoryDto;
+import svsite.matzip.foody.domain.auth.api.dto.response.ProfileResponseDto;
 import svsite.matzip.foody.domain.auth.api.dto.response.TokenResponseDto;
+import svsite.matzip.foody.domain.auth.entity.LoginType;
 import svsite.matzip.foody.domain.auth.entity.User;
 import svsite.matzip.foody.global.exception.errorCode.ErrorCodes;
 import svsite.matzip.foody.global.exception.support.CustomException;
@@ -139,5 +151,153 @@ class AuthControllerTest extends ControllerTestSupport {
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.accessToken", is("newAccessToken")))
         .andExpect(jsonPath("$.refreshToken", is("newRefreshToken")));
+  }
+
+  @Test
+  @DisplayName("프로필 조회 성공 시 200 OK와 프로필 정보를 반환한다.")
+  void getProfile_success() throws Exception {
+    // given
+    User mockUser = User.builder()
+        .id(1L)
+        .email("test@example.com")
+        .nickname("테스터")
+        .loginType(LoginType.KAKAO)
+        .imageUri("https://example.com/profile.jpg")
+        .build();
+
+    ProfileResponseDto responseDto = ProfileResponseDto.builder()
+        .id(mockUser.getId())
+        .email(mockUser.getEmail())
+        .nickname(mockUser.getNickname())
+        .loginType(mockUser.getLoginType())
+        .imageUri(mockUser.getImageUri())
+        .createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now())
+        .build();
+
+    when(authenticatedUserResolver.supportsParameter(any())).thenReturn(true);
+    when(authenticatedUserResolver.resolveArgument(any(), any(), any(), any())).thenReturn(mockUser);
+    when(authService.getProfile(any(User.class))).thenReturn(responseDto);
+
+    // when & then
+    mockMvc.perform(get("/auth/me")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer validAccessToken")
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(1L))
+        .andExpect(jsonPath("$.email").value("test@example.com"))
+        .andExpect(jsonPath("$.nickname").value("테스터"))
+        .andExpect(jsonPath("$.loginType").value("KAKAO"))
+        .andExpect(jsonPath("$.imageUri").value("https://example.com/profile.jpg"));
+  }
+
+
+  @Test
+  @DisplayName("프로필 수정 성공 시 200 OK와 수정된 프로필 정보를 반환한다.")
+  void editProfile_success() throws Exception {
+    // given
+    User mockUser = User.builder()
+        .id(1L)
+        .email("test@example.com")
+        .nickname("기존 닉네임")
+        .build();
+
+    EditProfileDto editProfileDto = EditProfileDto.builder()
+        .nickname("수정된 닉네임")
+        .imageUri("https://example.com/new-profile.jpg")
+        .build();
+
+    ProfileResponseDto responseDto = ProfileResponseDto.builder()
+        .id(mockUser.getId())
+        .email(mockUser.getEmail())
+        .nickname(editProfileDto.nickname())
+        .imageUri(editProfileDto.imageUri())
+        .loginType(LoginType.KAKAO)
+        .createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now())
+        .build();
+
+    when(authenticatedUserResolver.supportsParameter(any())).thenReturn(true);
+    when(authenticatedUserResolver.resolveArgument(any(), any(), any(), any())).thenReturn(mockUser);
+    when(authService.editProfile(any(EditProfileDto.class), any(User.class))).thenReturn(responseDto);
+
+    // when & then
+    mockMvc.perform(patch("/auth/me")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer validAccessToken")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(new ObjectMapper().writeValueAsString(editProfileDto)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(1L))
+        .andExpect(jsonPath("$.email").value("test@example.com"))
+        .andExpect(jsonPath("$.nickname").value("수정된 닉네임"))
+        .andExpect(jsonPath("$.imageUri").value("https://example.com/new-profile.jpg"))
+        .andExpect(jsonPath("$.loginType").value("KAKAO"));
+
+    verify(authService).editProfile(any(EditProfileDto.class), eq(mockUser));
+  }
+
+  @Test
+  @DisplayName("계정 삭제 성공 시 204 No Content와 삭제된 사용자 ID를 반환한다.")
+  void deleteAccount_success() throws Exception {
+    // given
+    User mockUser = User.builder()
+        .id(1L)
+        .email("test@example.com")
+        .nickname("테스터")
+        .build();
+
+    // 인증된 사용자 주입 설정
+    when(authenticatedUserResolver.supportsParameter(any())).thenReturn(true);
+    when(authenticatedUserResolver.resolveArgument(any(), any(), any(), any())).thenReturn(mockUser);
+
+    // 서비스 동작 모의(Mock)
+    when(authService.deleteAccount(any(User.class))).thenReturn(mockUser.getId());
+
+    // when & then
+    mockMvc.perform(delete("/auth/me")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer validAccessToken")
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isNoContent())
+        .andExpect(jsonPath("$").value(1L)); // 응답이 사용자 ID인지 검증
+
+    // 서비스 메서드 호출 검증
+    verify(authService, times(1)).deleteAccount(mockUser);
+  }
+
+  @Test
+  @DisplayName("카테고리 수정 시 200 OK와 수정된 프로필 정보를 반환한다.")
+  void updateCategory_success() throws Exception {
+    // given
+    User mockUser = User.builder()
+        .id(1L)
+        .email("test@example.com")
+        .nickname("테스터")
+        .build();
+    UpdateCategoryDto updateCategoryDto = new UpdateCategoryDto("한식", "양식", "채식", "중식", "디저트");
+
+    ProfileResponseDto responseDto = ProfileResponseDto.builder()
+        .id(mockUser.getId())
+        .nickname(mockUser.getNickname())
+        .RED(updateCategoryDto.red())
+        .BLUE(updateCategoryDto.blue())
+        .GREEN(updateCategoryDto.green())
+        .YELLOW(updateCategoryDto.yellow())
+        .PURPLE(updateCategoryDto.purple())
+        .build();
+
+    when(authService.updateCategory(any(UpdateCategoryDto.class), any(User.class))).thenReturn(responseDto);
+
+    // when & then
+    mockMvc.perform(patch("/auth/category")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer validAccessToken")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(updateCategoryDto)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(mockUser.getId()))
+        .andExpect(jsonPath("$.RED").value("한식"))
+        .andExpect(jsonPath("$.BLUE").value("양식"))
+        .andExpect(jsonPath("$.GREEN").value("채식"))
+        .andExpect(jsonPath("$.YELLOW").value("중식"))
+        .andExpect(jsonPath("$.PURPLE").value("디저트"));
   }
 }
