@@ -89,4 +89,10 @@ public class AuthService {
     user.editProfile(editProfileDto);
     return ProfileResponseDto.from(user);
   }
+
+  @Transactional
+  public long deleteAccount(User user) {
+    userRepository.delete(user);
+    return user.getId();
+  }
 }

@@ -105,4 +105,19 @@ public class AuthController {
   ) {
     return ResponseEntity.ok(authService.editProfile(editProfileDto, user));
   }
+
+  @Operation(
+      summary = "계정 삭제",
+      description = "로그인한 사용자의 계정을 삭제합니다.",
+      security = @SecurityRequirement(name = "bearerAuth")
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "204", description = "계정 삭제 성공"),
+      @ApiResponse(responseCode = "401", description = "인증 실패")
+  })
+  @DeleteMapping("/me")
+  public ResponseEntity<Long> deleteAccount(@AuthenticatedUser User user) {
+    return ResponseEntity.status(HttpStatus.NO_CONTENT).body(authService.deleteAccount(user));
+  }
+
 }
