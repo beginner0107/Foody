@@ -9,12 +9,15 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import svsite.matzip.foody.domain.auth.api.dto.request.AuthRequestDto;
+import svsite.matzip.foody.domain.auth.api.dto.response.ProfileResponseDto;
 import svsite.matzip.foody.domain.auth.api.dto.response.TokenResponseDto;
 import svsite.matzip.foody.domain.auth.entity.User;
 import svsite.matzip.foody.domain.auth.service.AuthService;
@@ -68,5 +71,19 @@ public class AuthController {
   @GetMapping("/logout")
   public ResponseEntity<Long> logout(@AuthenticatedUser User user) {
     return ResponseEntity.status(HttpStatus.OK).body(authService.deleteRefreshToken(user));
+  }
+
+  @Operation(
+      summary = "내 프로필 조회",
+      description = "로그인한 사용자의 프로필 정보를 조회합니다.",
+      security = @SecurityRequirement(name = "bearerAuth")
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "프로필 조회 성공"),
+      @ApiResponse(responseCode = "401", description = "인증 실패")
+  })
+  @GetMapping("/me")
+  public ResponseEntity<ProfileResponseDto> getProfile(@AuthenticatedUser User user) {
+    return ResponseEntity.ok(authService.getProfile(user));
   }
 }

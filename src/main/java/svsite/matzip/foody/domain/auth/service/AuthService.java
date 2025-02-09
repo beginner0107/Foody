@@ -10,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import svsite.matzip.foody.domain.auth.api.dto.request.AuthRequestDto;
+import svsite.matzip.foody.domain.auth.api.dto.response.ProfileResponseDto;
 import svsite.matzip.foody.domain.auth.api.dto.response.TokenResponseDto;
 import svsite.matzip.foody.domain.auth.entity.User;
 import svsite.matzip.foody.domain.auth.repository.UserRepository;
@@ -75,5 +76,10 @@ public class AuthService {
   public long deleteRefreshToken(User user) {
     user.updateHashedRefreshToken(null);
     return user.getId();
+  }
+
+  @Transactional(readOnly = true)
+  public ProfileResponseDto getProfile(User user) {
+    return ProfileResponseDto.from(user);
   }
 }
