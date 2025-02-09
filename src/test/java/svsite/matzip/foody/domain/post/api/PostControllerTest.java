@@ -11,7 +11,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static svsite.matzip.foody.global.exception.errorCode.ErrorCodes.*;
+import static svsite.matzip.foody.global.exception.errorCode.ErrorCodes.POST_NOT_FOUND;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -30,11 +30,10 @@ import svsite.matzip.foody.domain.auth.ControllerTestSupport;
 import svsite.matzip.foody.domain.auth.entity.User;
 import svsite.matzip.foody.domain.post.api.dto.request.CreatePostDto;
 import svsite.matzip.foody.domain.post.api.dto.request.UpdatePostDto;
+import svsite.matzip.foody.domain.post.api.dto.response.ImageResponseDto;
 import svsite.matzip.foody.domain.post.api.dto.response.MarkersResponseDto;
 import svsite.matzip.foody.domain.post.api.dto.response.PostResponseDto;
 import svsite.matzip.foody.domain.post.entity.MarkerColor;
-import svsite.matzip.foody.domain.post.entity.Post;
-import svsite.matzip.foody.global.exception.errorCode.ErrorCodes;
 import svsite.matzip.foody.global.exception.support.CustomException;
 
 class PostControllerTest extends ControllerTestSupport {
@@ -92,6 +91,8 @@ class PostControllerTest extends ControllerTestSupport {
         .description("정말 맛있는 집입니다!")
         .date(LocalDateTime.of(2025, 2, 8, 12, 0, 0))
         .score(9)
+        .images(Arrays.asList(ImageResponseDto.builder().uri("http://localhost/image1").build(),
+            ImageResponseDto.builder().uri("http://localhost/image2").build()))
         .createdAt(LocalDateTime.now())
         .updatedAt(LocalDateTime.now())
         .build();
@@ -111,7 +112,10 @@ class PostControllerTest extends ControllerTestSupport {
         .andExpect(jsonPath("$.address").value("서울특별시 종로구"))
         .andExpect(jsonPath("$.title").value("맛집 소개"))
         .andExpect(jsonPath("$.description").value("정말 맛있는 집입니다!"))
-        .andExpect(jsonPath("$.score").value(9));
+        .andExpect(jsonPath("$.score").value(9))
+        .andExpect(jsonPath("$.images").isArray())
+        .andExpect(jsonPath("$.images[0].uri").value("http://localhost/image1"))
+        .andExpect(jsonPath("$.images[1].uri").value("http://localhost/image2"));
 
     verify(postService).createPost(any(CreatePostDto.class), eq(mockUser));
   }
@@ -127,7 +131,8 @@ class PostControllerTest extends ControllerTestSupport {
         "맛집 수정 소개",
         "수정된 정말 맛있는 집입니다!",
         LocalDateTime.of(2025, 2, 8, 18, 0, 0),
-        8
+        8,
+        Arrays.asList("http://localhost/image3", "http://localhost/image4")
     );
 
     PostResponseDto responseDto = PostResponseDto.builder()
@@ -142,6 +147,10 @@ class PostControllerTest extends ControllerTestSupport {
         .score(8)
         .createdAt(LocalDateTime.now().minusDays(1))
         .updatedAt(LocalDateTime.now())
+        .images(Arrays.asList(
+            ImageResponseDto.builder().uri("http://localhost/image3").build(),
+            ImageResponseDto.builder().uri("http://localhost/image4").build()
+        ))
         .build();
 
     when(postService.updatePost(eq(1L), any(UpdatePostDto.class), any(User.class))).thenReturn(responseDto);
@@ -159,10 +168,15 @@ class PostControllerTest extends ControllerTestSupport {
         .andExpect(jsonPath("$.address").value("서울특별시 종로구"))
         .andExpect(jsonPath("$.title").value("맛집 수정 소개"))
         .andExpect(jsonPath("$.description").value("수정된 정말 맛있는 집입니다!"))
-        .andExpect(jsonPath("$.score").value(8));
+        .andExpect(jsonPath("$.score").value(8))
+        .andExpect(jsonPath("$.images").isArray())
+        .andExpect(jsonPath("$.images.length()").value(2))
+        .andExpect(jsonPath("$.images[0].uri").value("http://localhost/image3"))
+        .andExpect(jsonPath("$.images[1].uri").value("http://localhost/image4"));
 
     verify(postService).updatePost(eq(1L), any(UpdatePostDto.class), eq(mockUser));
   }
+
 
   @Test
   @DisplayName("사용자가 등록한 모든 맛집 게시글 목록을 페이지 단위로 조회한다")
@@ -245,7 +259,8 @@ class PostControllerTest extends ControllerTestSupport {
     // given
     User mockUser = setupAuthenticatedUser();
 
-    when(postService.getPostById(eq(1L), any(User.class))).thenThrow(new CustomException(POST_NOT_FOUND));
+    when(postService.getPostById(eq(1L), any(User.class))).thenThrow(
+        new CustomException(POST_NOT_FOUND));
 
     // when & then
     mockMvc.perform(get("/posts/{id}", 1L)
@@ -292,7 +307,6 @@ class PostControllerTest extends ControllerTestSupport {
         .andExpect(jsonPath("$['9'].length()").value(1))
         .andExpect(jsonPath("$['9'][0].title").value("맛집 소개 3"));
 
-
     verify(postService).getPostsByMonth(year, month, mockUser);
   }
 
@@ -332,7 +346,8 @@ class PostControllerTest extends ControllerTestSupport {
 
     Page<PostResponseDto> responsePage = new PageImpl<>(postList);
 
-    when(postService.searchMyPostsByTitleAndAddress(any(PageRequest.class), eq("맛집"), any(User.class)))
+    when(postService.searchMyPostsByTitleAndAddress(any(PageRequest.class), eq("맛집"),
+        any(User.class)))
         .thenReturn(responsePage);
 
     // when & then
@@ -350,7 +365,8 @@ class PostControllerTest extends ControllerTestSupport {
         .andExpect(jsonPath("$.content[1].title").value("맛집 소개 2"))
         .andDo(print());
 
-    verify(postService).searchMyPostsByTitleAndAddress(any(PageRequest.class), eq("맛집"), eq(mockUser));
+    verify(postService).searchMyPostsByTitleAndAddress(any(PageRequest.class), eq("맛집"),
+        eq(mockUser));
   }
 
   @Test
@@ -366,7 +382,8 @@ class PostControllerTest extends ControllerTestSupport {
         .andDo(print());
   }
 
-  private MarkersResponseDto createMarker(Long id, double latitude, double longitude, MarkerColor color, int score) {
+  private MarkersResponseDto createMarker(Long id, double latitude, double longitude,
+      MarkerColor color, int score) {
     return MarkersResponseDto.builder()
         .id(id)
         .latitude(BigDecimal.valueOf(latitude))
@@ -391,12 +408,14 @@ class PostControllerTest extends ControllerTestSupport {
         .build();
 
     when(authenticatedUserResolver.supportsParameter(any())).thenReturn(true);
-    when(authenticatedUserResolver.resolveArgument(any(), any(), any(), any())).thenReturn(mockUser);
+    when(authenticatedUserResolver.resolveArgument(any(), any(), any(), any())).thenReturn(
+        mockUser);
 
     return mockUser;
   }
 
-  private PostResponseDto createPostResponseDto(Long id, double lat, double lon, MarkerColor color, String address, String title) {
+  private PostResponseDto createPostResponseDto(Long id, double lat, double lon, MarkerColor color,
+      String address, String title) {
     return PostResponseDto.builder()
         .id(id)
         .latitude(BigDecimal.valueOf(lat))

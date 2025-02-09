@@ -103,7 +103,10 @@ class PostServiceTest {
 
     when(postRepository.save(any(Post.class))).thenAnswer(invocation -> {
       Post post = invocation.getArgument(0);
-      ReflectionTestUtils.setField(post, "id", 1L);  // save 후 ID 설정
+      ReflectionTestUtils.setField(post, "id", 1L);
+      if (post.getImages() == null) {
+        post.addImages(Collections.emptyList());
+      }
       return post;
     });
 
@@ -143,7 +146,8 @@ class PostServiceTest {
         "수정된 맛집 소개",
         "수정된 설명",
         LocalDateTime.of(2025, 2, 8, 15, 30, 0),
-        9
+        9,
+        Arrays.asList()
     );
 
     when(postRepository.findByPostIdAndUser(1L, mockUser)).thenReturn(Optional.of(existingPost));
