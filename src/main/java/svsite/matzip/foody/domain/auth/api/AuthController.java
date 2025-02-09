@@ -1,6 +1,7 @@
 package svsite.matzip.foody.domain.auth.api;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import svsite.matzip.foody.domain.auth.api.dto.request.AuthRequestDto;
 import svsite.matzip.foody.domain.auth.api.dto.request.EditProfileDto;
+import svsite.matzip.foody.domain.auth.api.dto.request.UpdateCategoryDto;
 import svsite.matzip.foody.domain.auth.api.dto.response.ProfileResponseDto;
 import svsite.matzip.foody.domain.auth.api.dto.response.TokenResponseDto;
 import svsite.matzip.foody.domain.auth.entity.User;
@@ -120,4 +122,24 @@ public class AuthController {
     return ResponseEntity.status(HttpStatus.NO_CONTENT).body(authService.deleteAccount(user));
   }
 
+  @Operation(
+      summary = "카테고리 수정",
+      description = "사용자가 자신의 카테고리 정보를 수정합니다.",
+      security = @SecurityRequirement(name = "bearerAuth")
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "카테고리 수정 성공"),
+      @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+      @ApiResponse(responseCode = "401", description = "인증 실패")
+  })
+  @PatchMapping("/category")
+  public ResponseEntity<ProfileResponseDto> updateCategory(
+      @Parameter(description = "현재 인증된 사용자 정보", hidden = true)
+      @AuthenticatedUser User user,
+
+      @Parameter(description = "수정할 카테고리 정보", required = true)
+      @RequestBody UpdateCategoryDto categories
+  ) {
+    return ResponseEntity.ok().body(authService.updateCategory(categories, user));
+  }
 }

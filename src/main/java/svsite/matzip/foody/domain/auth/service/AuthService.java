@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import svsite.matzip.foody.domain.auth.api.dto.request.AuthRequestDto;
 import svsite.matzip.foody.domain.auth.api.dto.request.EditProfileDto;
+import svsite.matzip.foody.domain.auth.api.dto.request.UpdateCategoryDto;
 import svsite.matzip.foody.domain.auth.api.dto.response.ProfileResponseDto;
 import svsite.matzip.foody.domain.auth.api.dto.response.TokenResponseDto;
 import svsite.matzip.foody.domain.auth.entity.User;
@@ -94,5 +95,11 @@ public class AuthService {
   public long deleteAccount(User user) {
     userRepository.delete(user);
     return user.getId();
+  }
+
+  @Transactional
+  public ProfileResponseDto updateCategory(UpdateCategoryDto categories, User user) {
+    user.updateCategory(categories);
+    return ProfileResponseDto.from(user);
   }
 }
