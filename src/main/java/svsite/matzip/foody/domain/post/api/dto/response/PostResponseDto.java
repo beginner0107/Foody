@@ -1,5 +1,6 @@
 package svsite.matzip.foody.domain.post.api.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -35,10 +36,21 @@ public record PostResponseDto(
     @Schema(description = "수정 날짜 및 시간", example = "2025-02-08T13:00:00")
     LocalDateTime updatedAt,
     @Schema(description = "게시글에 첨부된 이미지 목록")
-    List<ImageResponseDto> images
+    List<ImageResponseDto> images,
+    @Schema(description = "즐겨찾기 유무")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    Boolean isFavorite
 ) {
 
   public static PostResponseDto from(Post post) {
+    return from(post, null);
+  }
+
+  public static PostResponseDto fromWithFavorite(Post post, boolean isFavorite) {
+    return from(post, isFavorite);
+  }
+
+  public static PostResponseDto from(Post post, Boolean isFavorite) {
     return PostResponseDto.builder()
         .id(post.getId())
         .latitude(post.getLatitude())
@@ -50,8 +62,8 @@ public record PostResponseDto(
         .date(post.getDate())
         .score(post.getScore())
         .images(post.getImages().stream()
-            .sorted(Comparator.comparingLong(
-                image -> Optional.ofNullable(image.getId()).orElse(0L)))
+            .sorted(
+                Comparator.comparingLong(image -> Optional.ofNullable(image.getId()).orElse(0L)))
             .map(image -> ImageResponseDto.builder()
                 .id(image.getId())
                 .uri(image.getUri())
@@ -62,6 +74,7 @@ public record PostResponseDto(
             .toList())
         .createdAt(post.getCreatedAt())
         .updatedAt(post.getUpdatedAt())
+        .isFavorite(isFavorite)
         .build();
   }
 }
