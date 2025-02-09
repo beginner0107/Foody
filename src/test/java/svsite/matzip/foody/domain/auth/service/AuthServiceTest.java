@@ -8,6 +8,7 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -23,6 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 import svsite.matzip.foody.domain.auth.api.dto.request.AuthRequestDto;
+import svsite.matzip.foody.domain.auth.api.dto.request.EditProfileDto;
 import svsite.matzip.foody.domain.auth.api.dto.response.ProfileResponseDto;
 import svsite.matzip.foody.domain.auth.api.dto.response.TokenResponseDto;
 import svsite.matzip.foody.domain.auth.entity.LoginType;
@@ -220,5 +222,34 @@ class AuthServiceTest {
     assertEquals("맛있는 해물라면", responseDto.BLUE(), "BLUE 카테고리가 예상 값과 일치해야 합니다.");
     assertEquals("정말 1티어 맛집", responseDto.RED(), "RED 카테고리가 예상 값과 일치해야 합니다.");
     assertEquals("부모님이 좋아하시는 한식", responseDto.PURPLE(), "PURPLE 카테고리가 예상 값과 일치해야 합니다.");
+  }
+
+  @Test
+  @DisplayName("프로필 수정 시 성공적으로 수정된 프로필 정보를 반환한다.")
+  void editProfile_success() {
+    // given
+    User mockUser = User.builder()
+        .id(1L)
+        .email("test@example.com")
+        .nickname("기존 닉네임")
+        .imageUri("https://example.com/original-profile.jpg")
+        .loginType(LoginType.KAKAO)
+        .build();
+
+    EditProfileDto editProfileDto = new EditProfileDto(
+        "수정된 닉네임",
+        "https://example.com/new-profile.jpg"
+    );
+
+    // when
+    ProfileResponseDto responseDto = authService.editProfile(editProfileDto, mockUser);
+
+    // then
+    assertNotNull(responseDto, "응답은 null이 아니어야 합니다.");
+    assertEquals(mockUser.getId(), responseDto.id(), "ID가 예상 값과 일치해야 합니다.");
+    assertEquals(editProfileDto.nickname(), responseDto.nickname(), "닉네임이 예상 값과 일치해야 합니다.");
+    assertEquals(editProfileDto.imageUri(), responseDto.imageUri(), "이미지 URI가 예상 값과 일치해야 합니다.");
+
+    verify(userRepository, never()).save(any(User.class));
   }
 }

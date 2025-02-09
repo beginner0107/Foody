@@ -2,15 +2,19 @@ package svsite.matzip.foody.domain.auth.api;
 
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,6 +22,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import svsite.matzip.foody.domain.auth.ControllerTestSupport;
 import svsite.matzip.foody.domain.auth.api.dto.request.AuthRequestDto;
+import svsite.matzip.foody.domain.auth.api.dto.request.EditProfileDto;
 import svsite.matzip.foody.domain.auth.api.dto.response.ProfileResponseDto;
 import svsite.matzip.foody.domain.auth.api.dto.response.TokenResponseDto;
 import svsite.matzip.foody.domain.auth.entity.LoginType;
@@ -180,5 +185,50 @@ class AuthControllerTest extends ControllerTestSupport {
         .andExpect(jsonPath("$.nickname").value("테스터"))
         .andExpect(jsonPath("$.loginType").value("KAKAO"))
         .andExpect(jsonPath("$.imageUri").value("https://example.com/profile.jpg"));
+  }
+
+
+  @Test
+  @DisplayName("프로필 수정 성공 시 200 OK와 수정된 프로필 정보를 반환한다.")
+  void editProfile_success() throws Exception {
+    // given
+    User mockUser = User.builder()
+        .id(1L)
+        .email("test@example.com")
+        .nickname("기존 닉네임")
+        .build();
+
+    EditProfileDto editProfileDto = EditProfileDto.builder()
+        .nickname("수정된 닉네임")
+        .imageUri("https://example.com/new-profile.jpg")
+        .build();
+
+    ProfileResponseDto responseDto = ProfileResponseDto.builder()
+        .id(mockUser.getId())
+        .email(mockUser.getEmail())
+        .nickname(editProfileDto.nickname())
+        .imageUri(editProfileDto.imageUri())
+        .loginType(LoginType.KAKAO)
+        .createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now())
+        .build();
+
+    when(authenticatedUserResolver.supportsParameter(any())).thenReturn(true);
+    when(authenticatedUserResolver.resolveArgument(any(), any(), any(), any())).thenReturn(mockUser);
+    when(authService.editProfile(any(EditProfileDto.class), any(User.class))).thenReturn(responseDto);
+
+    // when & then
+    mockMvc.perform(patch("/auth/me")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer validAccessToken")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(new ObjectMapper().writeValueAsString(editProfileDto)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(1L))
+        .andExpect(jsonPath("$.email").value("test@example.com"))
+        .andExpect(jsonPath("$.nickname").value("수정된 닉네임"))
+        .andExpect(jsonPath("$.imageUri").value("https://example.com/new-profile.jpg"))
+        .andExpect(jsonPath("$.loginType").value("KAKAO"));
+
+    verify(authService).editProfile(any(EditProfileDto.class), eq(mockUser));
   }
 }
