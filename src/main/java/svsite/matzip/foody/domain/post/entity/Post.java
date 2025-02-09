@@ -18,10 +18,11 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -108,23 +109,22 @@ public class Post extends BaseEntity {
   }
 
   public void updateImages(List<Image> updatedImages) {
-    List<Image> imagesToAdd = findImagesToAdd(updatedImages);
-    List<Image> imagesToRemove = findImagesToRemove(updatedImages);
+    Map<String, Image> existingImageMap = images.stream()
+        .collect(Collectors.toMap(Image::getUri, Function.identity()));
+
+    updatedImages.forEach(newImage -> {
+      Image existingImage = existingImageMap.get(newImage.getUri());
+      if (existingImage == null) {
+        this.addImage(newImage);
+      }
+    });
+
+    List<Image> imagesToRemove = images.stream()
+        .filter(existing -> updatedImages.stream()
+            .noneMatch(newImage -> newImage.getUri().equals(existing.getUri())))
+        .toList();
 
     imagesToRemove.forEach(this::removeImage);
-    imagesToAdd.forEach(this::addImage);
-  }
-
-  private List<Image> findImagesToAdd(List<Image> updatedImages) {
-    return updatedImages.stream()
-        .filter(newImage -> images.stream().noneMatch(existing -> existing.getUri().equals(newImage.getUri())))
-        .toList();
-  }
-
-  private List<Image> findImagesToRemove(List<Image> updatedImages) {
-    return images.stream()
-        .filter(existing -> updatedImages.stream().noneMatch(newImage -> newImage.getUri().equals(existing.getUri())))
-        .toList();
   }
 
   public void addImages(List<Image> images) {
@@ -133,7 +133,6 @@ public class Post extends BaseEntity {
 
   public void addImage(Image image) {
     image.associateWithPost(this);
-    this.images.add(image);
   }
 
   public void removeImage(Image image) {
@@ -143,10 +142,15 @@ public class Post extends BaseEntity {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if(!(o instanceof Post post)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof Post post)) {
+      return false;
+    }
     return id != null && id.equals(post.id);
   }
+
   @Override
   public int hashCode() {
     return Objects.hash(getId());

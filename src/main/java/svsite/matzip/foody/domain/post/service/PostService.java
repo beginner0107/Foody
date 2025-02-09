@@ -51,6 +51,8 @@ public class PostService {
         .map(uri -> Image.builder().uri(uri).build())
         .toList());
 
+    post = postRepository.save(post);
+
     return PostResponseDto.from(post);
   }
 

@@ -24,6 +24,7 @@ import svsite.matzip.foody.global.entity.BaseEntity;
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Image extends BaseEntity {
+
   @Id
   @GeneratedValue
   private Long id;
@@ -31,15 +32,22 @@ public class Image extends BaseEntity {
   private String uri;
 
   @ManyToOne(fetch = LAZY)
-  @JoinColumn(name="post_id")
+  @JoinColumn(name = "post_id")
   Post post;
 
   public void associateWithPost(Post post) {
+    if (this.post == post) {
+      return;
+    }
+
     if (this.post != null) {
       this.post.getImages().remove(this);
     }
+
     this.post = post;
-    if (post != null && !post.getImages().contains(this)) {
+
+    if (post != null && post.getImages().stream()
+        .noneMatch(image -> image.getUri().equals(this.uri))) {
       post.getImages().add(this);
     }
   }
@@ -54,11 +62,12 @@ public class Image extends BaseEntity {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if(!(o instanceof Image image)) return false;
-    return id != null && id.equals(image.id);
+    if (!(o instanceof Image image)) return false;
+    return (id != null ? id.equals(image.id) : uri.equals(image.uri));
   }
+
   @Override
   public int hashCode() {
-    return Objects.hash(getId());
+    return id != null ? Objects.hash(id) : Objects.hash(uri);
   }
 }
