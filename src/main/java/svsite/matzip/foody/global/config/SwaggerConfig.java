@@ -36,7 +36,11 @@ public class SwaggerConfig {
     return (operation, handlerMethod) -> {
       Arrays.stream(handlerMethod.getMethodParameters())
           .filter(param -> param.hasParameterAnnotation(AuthenticatedUser.class))
-          .forEach(param -> operation.getParameters().clear());
+          .forEach(param -> {
+            if (operation.getParameters() != null) {
+              operation.getParameters().clear();
+            }
+          });
       return operation;
     };
   }
