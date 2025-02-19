@@ -1,5 +1,5 @@
 # 나만의 맛집 일기장 Foody
--  http:map-sv.site (예정)
+-  http:map-sv.site
 
 
 ## 1. 제작 기간 & 참여 인원
