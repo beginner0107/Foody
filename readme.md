@@ -1,7 +1,7 @@
 # 맛집 일기장 Foody
 -  http:map-sv.site
 -  http:map-sv.site/swagger-ui.html
-  
+
 ## 1. 제작 기간 & 참여 인원
 
 - 2025년 01월 31일 ~ 02월 07일 (예정)
