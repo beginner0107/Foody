@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
 
+@Schema(description = "회원 프로필 변경 DTO")
 @Builder
 public record EditProfileDto(
     @Schema(description = "닉네임 (1~20자)", example = "테스터")
