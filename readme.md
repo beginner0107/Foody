@@ -1,6 +1,5 @@
 # 맛집 일기장 Foody
--  http:map-sv.site
--  http:map-sv.site/swagger-ui.html
+-  https:map-sv.site/swagger-ui.html
 
 ## 1. 제작 기간 & 참여 인원
 
