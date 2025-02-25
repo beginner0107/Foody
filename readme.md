@@ -1,5 +1,5 @@
 # 맛집 일기장 Foody
--  https:map-sv.site/swagger-ui.html
+<a href="https://map-sv.site/swagger-ui.html" target="_blank" rel="noopener noreferrer">맛집 일기장 Foody Swagger</a>
 
 ## 1. 제작 기간 & 참여 인원
 
@@ -16,8 +16,10 @@
 - Spring Data JPA
 - postgresql
 
+## 3. 아키텍처 설계
+<img src="https://github.com/user-attachments/assets/af6075c5-71d7-4b3d-94ba-311bfb7f5573" alt="map-sv아키텍처" width="700">
 
-## 3. 도메인
+## 4. 도메인
 
 ```
  ─ domain
@@ -27,7 +29,7 @@
     ├─ post          // 게시글
 ```
 
-## 4. 차트 & 다이어그램 설계
+## 5. 차트 & 다이어그램 설계
 
 <details>
 <summary><b style="cursor:pointer">ERD 설계</b></summary>
@@ -159,11 +161,11 @@ sequenceDiagram
 </div>
 </details>
 
-## 5. 핵심 기능
+## 6. 핵심 기능
 
-## 6. 프로젝트를 진행하며 고민한 Technical Issue
+## 7. 프로젝트를 진행하며 고민한 Technical Issue
 
-## 7. 트러블 슈팅
+## 8. 트러블 슈팅
 
 <details>
 <summary style="cursor: pointer">스프링 프로젝트 시작 후 바로 종료(shutdown)</summary>
